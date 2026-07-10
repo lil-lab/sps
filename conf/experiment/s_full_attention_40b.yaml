@@ -1,0 +1,36 @@
+# @package _global_
+
+# S full attention baseline
+
+defaults:
+  - override /model: standard
+  - override /data: fineweb-edu
+
+# Experiment metadata
+experiment:
+  name: s_full_attention_40b
+  tags: [s, full_attention, 40b]
+
+# Model configuration (s scale)
+model:
+  config:
+    n_layer: 12
+    n_head: 12
+    hidden_size: 768
+    intermediate_size: 2304  # 3 * hidden_size
+
+# Logging override
+logging:
+  wandb_run_name: ${experiment.name}
+
+training:
+  max_tokens: 40000000000
+  eval_interval_tokens: 40000000
+  save_every: 2000000000  # Save checkpoint every 1B tokens
+  skip_first_eval: false
+
+scheduler:
+  lr_decay_tokens: 4000000000
+  warmup_tokens: 50000000
+
+

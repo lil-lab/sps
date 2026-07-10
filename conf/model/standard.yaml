@@ -1,0 +1,20 @@
+# Standard transformer model (no predicts)
+
+_target_: modeling.models.full_attention_model.Model
+
+config:
+  _target_: modeling.models.full_attention_model.ModelConfig
+  # Architecture
+  block_size: 4096
+  vocab_size: 50304
+  n_layer: 12
+  n_head: 12
+  hidden_size: 768
+  intermediate_size: 2304  # 3 * hidden_size
+  norm_eps: 1e-6
+  dropout: 0.0
+  bias: false
+  eos_token_id: 50256
+  pad_token_id: 50303  # Last valid token ID (vocab_size - 1)
+  use_triton_full_attention: true
+  warp_specialize: false

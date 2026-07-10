@@ -1,0 +1,4 @@
+# Evaluation configuration
+
+total_tokens: 10000000
+seed: 100

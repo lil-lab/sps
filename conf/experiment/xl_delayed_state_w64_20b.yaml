@@ -1,0 +1,34 @@
+# @package _global_
+
+# XL Delayed State baseline (deterministic sliding predicts, window_size=64)
+
+defaults:
+  - override /model: delayed_state
+  - override /data: fineweb-edu
+
+experiment:
+  name: xl_delayed_state_w64_20b
+  tags: [xl, delayed_state, sliding_predict_tokens, deterministic, w64, 20b, triton]
+
+model:
+  config:
+    n_layer: 48
+    n_head: 25
+    hidden_size: 1600
+    intermediate_size: 4800  # 3 * hidden_size
+    dropout: 0.0
+    window_size: 64
+    enable_triton_attention: true
+
+logging:
+  wandb_run_name: ${experiment.name}
+
+training:
+  max_tokens: 20000000000
+  eval_interval_tokens: 40000000
+  save_every: 2000000000
+  skip_first_eval: false
+
+scheduler:
+  lr_decay_tokens: 2000000000
+  warmup_tokens: 100000000

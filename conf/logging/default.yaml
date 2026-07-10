@@ -1,0 +1,7 @@
+# Logging configuration
+
+wandb_log: true
+wandb_project: pretraining_compression
+wandb_entity: null  # null = log to your default W&B entity; set to a team/org to override. Disable W&B entirely with logging.wandb_log=false
+wandb_run_name: default_run  # Override in experiment configs or via CLI
+wandb_dir: ${system.data_root}/wandb  # Local W&B run files; keep them off home.

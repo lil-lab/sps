@@ -1,0 +1,35 @@
+# @package _global_
+
+# Baseline with standard transformer (no predicts)
+# Usage: python train.py +experiment=baseline_standard
+
+defaults:
+  - override /model: standard
+  - override /data: fineweb-edu
+
+# Experiment metadata
+experiment:
+  name: xs_full_attention_20b
+  tags: [xs, full_attention, 20b]
+
+# Model configuration (xs scale)
+model:
+  config:
+    n_layer: 8
+    n_head: 8
+    hidden_size: 512
+    intermediate_size: 1536  # 3 * hidden_size
+
+# Logging override
+logging:
+  wandb_run_name: ${experiment.name}
+
+training:
+  max_tokens: 20000000000
+  eval_interval_tokens: 40000000
+  save_every: 2000000000  # Save checkpoint every 2B tokens
+  skip_first_eval: false
+
+scheduler:
+  lr_decay_tokens: 2000000000
+  warmup_tokens: 50000000

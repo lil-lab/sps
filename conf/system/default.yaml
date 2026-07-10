@@ -1,0 +1,8 @@
+# System configuration
+
+backend: nccl      # DDP backend (nccl for NVIDIA GPUs, gloo for CPU)
+dtype: bfloat16    # Training precision: float32, bfloat16, or float16
+device: cuda       # Device: cuda or cpu
+compile: true      # Use torch.compile for faster training
+deterministic: false  # Enable deterministic mode for reproducibility testing
+data_root: ???     # Required: base directory for datasets and checkpoints. Set on the CLI, e.g. system.data_root=/path/to/data

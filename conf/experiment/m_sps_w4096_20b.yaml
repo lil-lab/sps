@@ -1,0 +1,34 @@
+# @package _global_
+
+# M SPS baseline (deterministic sliding predicts, window_size=4096)
+
+defaults:
+  - override /model: sps
+  - override /data: fineweb-edu
+
+experiment:
+  name: m_sps_w4096_20b
+  tags: [m, sps, sliding_predict_tokens, deterministic, w4096, 20b, triton]
+
+model:
+  config:
+    n_layer: 24
+    n_head: 16
+    hidden_size: 1024
+    intermediate_size: 3072  # 3 * hidden_size
+    dropout: 0.0
+    window_size: 4096
+    enable_triton_attention: true
+
+logging:
+  wandb_run_name: ${experiment.name}
+
+training:
+  max_tokens: 20000000000
+  eval_interval_tokens: 40000000
+  save_every: 2000000000
+  skip_first_eval: false
+
+scheduler:
+  lr_decay_tokens: 2000000000
+  warmup_tokens: 100000000

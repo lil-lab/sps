@@ -1,0 +1,33 @@
+# @package _global_
+
+# Seed-sweep variant of s_full_attention_10b (base seed and chunk_shuffle_seed both = 1)
+
+defaults:
+  - override /model: standard
+  - override /data: fineweb-edu
+
+experiment:
+  name: s_full_attention_10b_seed1
+  tags: [s, full_attention, 10b, seed_sweep, seed1]
+
+model:
+  config:
+    n_layer: 12
+    n_head: 12
+    hidden_size: 768
+    intermediate_size: 2304  # 3 * hidden_size
+
+logging:
+  wandb_run_name: ${experiment.name}
+
+training:
+  max_tokens: 10000000000
+  eval_interval_tokens: 20000000
+  save_every: 1000000000  # Save checkpoint every 1B tokens
+  skip_first_eval: false
+  seed: 1
+  chunk_shuffle_seed: 1
+
+scheduler:
+  lr_decay_tokens: 1000000000
+  warmup_tokens: 50000000

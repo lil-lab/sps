@@ -1,0 +1,7 @@
+# AdamW optimizer configuration
+
+weight_decay: 0.1
+learning_rate: 6e-4
+beta1: 0.9
+beta2: 0.95
+grad_clip: 1.0

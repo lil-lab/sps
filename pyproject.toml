@@ -1,0 +1,40 @@
+[project]
+name = "pretraining-compression"
+version = "0.1.0"
+description = "Code for the paper 'The State-Prediction Separation Hypothesis' (arXiv:2607.01218)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "accelerate>=1.12.0",
+    "datasets<=3.6.0",
+    "hydra-core>=1.3.2",
+    "lm-eval",
+    "matplotlib>=3.10.7",
+    "pytest>=8.4.2",
+    "tiktoken>=0.12.0",
+    "torch==2.9.0",
+    "tqdm>=4.67.1",
+    "transformers>=4.57.1",
+    "wandb>=0.22.2",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["src/modeling/tests"]
+# Put the repo root on sys.path so tests can `import scripts.evaluate` (the repo's
+# eval entrypoint) without colliding with the installed HuggingFace `evaluate` package.
+pythonpath = ["."]
+markers = [
+    "cuda: requires CUDA GPU",
+    "triton: requires Triton (implies CUDA)",
+    "slow: long-running stability/mismatch diagnostics (use --run-slow to enable)",
+]
+
+[tool.uv.sources]
+lm-eval = { git = "https://github.com/EleutherAI/lm-evaluation-harness.git" }

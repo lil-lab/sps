@@ -1,0 +1,13 @@
+# Main configuration file
+defaults:
+  - training: default
+  - optimizer: adamw
+  - scheduler: linear_decay
+  - model: standard
+  - data: fineweb-edu
+  - logging: default
+  - system: default
+  - eval: default
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+  - _self_

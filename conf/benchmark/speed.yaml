@@ -1,0 +1,46 @@
+# The benchmark config for the paper. Reproduces BOTH speed columns of the main results
+# table (outputs/tables/main_results_table_compact.tex): "Throughput (x)" AND "Peak
+# Memory (x)". The table script (scripts/tables/export_main_results_table.py) derives both
+# from this single run's results.json -- throughput = end-to-end tok/s on the combined
+# "prefill 1k + decode 3k" workload; peak memory + decode tok/s from the same operating
+# point. See scripts/benchmark/REPRODUCE.md.
+#
+# These values are CLUSTER-INDEPENDENT: they define *what* is measured so the numbers
+# reproduce on any machine. Cluster-specific inputs (checkpoint root, val.bin, SLURM
+# partition/account/gres) are NOT here -- they are passed as env vars to
+# scripts/benchmark/run.sh at submit time.
+#
+# Batch 16 across ALL FIVE scales incl XL: a larger batch OOMs XL "2x Memory" (w4096) on a
+# single 80GB H100, so the whole table is batch 16 for an apples-to-apples set. XL also
+# requires WARP_SPECIALIZE=off (its kernels can't compile warp-specialized on current
+# Triton; warp-off is numerically identical) -- see REPRODUCE.md.
+
+seed: 1337
+require_batched_prefill: true   # set allow_step_prefill: true to permit token-by-token prefill
+
+# Model scales to benchmark (one model family of each per scale).
+scales: [xs, s, m, l, xl]
+
+# The four methods compared in the main results table. `kind` is the architecture tag;
+# `run_name` is the checkpoint directory under $OUT_ROOT, with {scale} substituted.
+# Same model architectures everywhere -> only $OUT_ROOT / $CKPT_NAME change for new weights.
+methods:
+  - kind: full_attention
+    label: "Standard"
+    run_name: "{scale}_full_attention_20b"
+  - kind: sps
+    label: "2x Memory"
+    run_name: "{scale}_sps_w4096_20b"
+  - kind: delayed_state
+    label: "Delayed State"
+    run_name: "{scale}_delayed_state_w64_20b"
+  - kind: sps
+    label: "SPS"
+    run_name: "{scale}_sps_w64_20b"
+
+# Workload: prompt 1024 -> decode 3072, batch 16, 1 warmup + 2 timed iters.
+prompt_lens: [1024]
+num_prompts: 16
+max_new_tokens: 3072
+warmup_iters: 1
+timed_iters: 2

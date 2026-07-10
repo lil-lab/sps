@@ -1,0 +1,35 @@
+# @package _global_
+
+# L SPS baseline (deterministic sliding predicts, window_size=4096)
+
+defaults:
+  - override /model: sps
+  - override /data: fineweb-edu
+
+experiment:
+  name: l_sps_w4096_20b
+  tags: [l, sps, sliding_predict_tokens, deterministic, w4096, 20b, triton]
+
+model:
+  config:
+    n_layer: 36
+    n_head: 20
+    hidden_size: 1280
+    intermediate_size: 3840  # 3 * hidden_size
+    dropout: 0.0
+    window_size: 4096
+    enable_triton_attention: true
+
+logging:
+  wandb_run_name: ${experiment.name}
+
+training:
+  max_tokens: 20000000000
+  eval_interval_tokens: 40000000
+  save_every: 2000000000
+  skip_first_eval: false
+  micro_batch_size: 3
+
+scheduler:
+  lr_decay_tokens: 2000000000
+  warmup_tokens: 100000000

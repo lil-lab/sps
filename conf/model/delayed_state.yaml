@@ -1,0 +1,23 @@
+# Deterministic sliding-predicts model with logits read from predict slots.
+
+_target_: modeling.models.delayed_state.DelayedStateModel
+
+config:
+  _target_: modeling.models.delayed_state.DelayedStateConfig
+  # Architecture
+  block_size: 4096
+  vocab_size: 50304
+  n_layer: 12
+  n_head: 12
+  hidden_size: 768
+  intermediate_size: 2304
+  norm_eps: 1e-6
+  dropout: 0.0
+  bias: false
+  eos_token_id: 50256
+  pad_token_id: 50303
+  # Sliding-predicts
+  predict_token_id: 50257
+  window_size: 16
+  enable_triton_attention: true
+  warp_specialize: false

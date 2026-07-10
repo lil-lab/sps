@@ -1,0 +1,7 @@
+# Linear learning rate decay schedule (token-based)
+# Decay happens at the END of training over the last lr_decay_tokens
+
+decay_lr: true
+warmup_tokens: 50000000     # Warmup for 50M tokens (set to 0 for no warmup)
+lr_decay_tokens: 1000000000 # Linear decay over the LAST 1B tokens
+min_lr: 6e-5

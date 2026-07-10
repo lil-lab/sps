@@ -1,0 +1,36 @@
+# @package _global_
+
+# Seed-sweep variant of s_delayed_state_w64_10b (base seed and chunk_shuffle_seed both = 0)
+
+defaults:
+  - override /model: delayed_state
+  - override /data: fineweb-edu
+
+experiment:
+  name: s_delayed_state_w64_10b_seed0
+  tags: [s, delayed_state, sliding_predict_tokens, deterministic, w64, 10b, triton, seed_sweep, seed0]
+
+model:
+  config:
+    n_layer: 12
+    n_head: 12
+    hidden_size: 768
+    intermediate_size: 2304  # 3 * hidden_size
+    dropout: 0.0
+    window_size: 64
+    enable_triton_attention: true
+
+logging:
+  wandb_run_name: ${experiment.name}
+
+training:
+  max_tokens: 10000000000
+  eval_interval_tokens: 20000000
+  save_every: 1000000000  # Save checkpoint every 1B tokens
+  skip_first_eval: false
+  seed: 0
+  chunk_shuffle_seed: 0
+
+scheduler:
+  lr_decay_tokens: 1000000000
+  warmup_tokens: 50000000

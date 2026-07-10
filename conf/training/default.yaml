@@ -1,0 +1,41 @@
+# Training configuration
+
+# Batch size configuration
+micro_batch_size: 6  # Batch size per GPU per forward pass
+global_batch_size: 96  # Total effective batch size across all GPUs and gradient accumulation
+                         # gradient_accumulation_steps is computed automatically as:
+                         # global_batch_size / (micro_batch_size * num_gpus)
+                         # Examples: 3840 / (60 * 1) = 64 steps, 3840 / (60 * 8) = 8 steps
+
+# Training loop
+max_tokens: 10000000000  # Stop after this many tokens (~1.18T tokens)
+                          # With model block_size=4096 and global_batch_size=3840:
+                          # tokens_per_iter = 15,728,640, so this is ~75k iterations
+
+# Evaluation
+eval_total_tokens: 10000000  # Total tokens to evaluate per evaluation call
+eval_interval_tokens: 20000000  # Evaluate every N tokens (overrides eval_interval if set)
+eval_only: false     # If true, only run evaluation and exit
+skip_first_eval: false  # If true, skip the eval at iter 0 (unless eval_only)
+val_max_tokens: null  # Optional cap on val token range for sampling
+
+# Logging
+log_interval: 1     # Log training metrics every N iterations
+always_save_checkpoint: true
+
+# Checkpointing
+save_every: 1000000000  # Save a named, permanent ckpt_tokens_{N}.pt every N tokens (default: 1B) — additional snapshots
+rolling_save_every: 100000000  # Refresh the rolling resume checkpoint ckpt.pt every N tokens (default: 100M, pre-decay only)
+
+# Sampler
+sampler_type: fixed_random_chunk  # sequential | fixed_random_chunk
+chunk_shuffle_seed: 1337
+
+# Base seed for torch / Python RNGs (model init, dropout masks, sampler offset random)
+# Independent from chunk_shuffle_seed; tie them together in seed-sweep yamls.
+seed: 1337
+chunk_size_units: 262144  # Number of block-sized sequence starts per chunk (~1.07B tokens at block_size=4096)
+
+# Initialization
+init_from: resume  # 'scratch' or 'resume' - defaults to resume (falls back to scratch if no checkpoint)
+resume_checkpoint: null  # Optional explicit named checkpoint/path for resume; defaults to latest non-final ckpt_tokens_*.pt

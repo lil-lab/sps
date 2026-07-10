@@ -1,0 +1,24 @@
+task: gov_report_nll
+dataset_path: launch/gov_report
+dataset_name: plain_text
+dataset_kwargs:
+  revision: 32feeaede49fed993aef070bc4da09263fd0429a
+  trust_remote_code: true
+output_type: loglikelihood_rolling
+validation_split: validation
+doc_to_text: ""
+doc_to_target: document
+should_decontaminate: true
+doc_to_decontamination_query: "{{document}}"
+metric_list:
+  - metric: word_perplexity
+    aggregation: weighted_perplexity
+    higher_is_better: false
+  - metric: byte_perplexity
+    aggregation: weighted_perplexity
+    higher_is_better: false
+  - metric: bits_per_byte
+    aggregation: bits_per_byte
+    higher_is_better: false
+metadata:
+  version: 1
