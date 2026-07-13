@@ -1,0 +1,1998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The State-Prediction Separation Hypothesis</title>
+<link rel="icon" type="image/svg+xml" href="assets/cornell.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [["$", "$"], ["\\(", "\\)"]],
+      displayMath: [["$$", "$$"], ["\\[", "\\]"]]
+    }
+  };
+</script>
+<style>
+  :root {
+    --bg: #fdfcf8;
+    --panel: #fffefa;
+    --ink: #1c1c1e;
+    --ink-soft: #4a4a4c;
+    --muted: #7a7a7e;
+    --rule: #e6e2d7;
+    --rule-strong: #cfc9b8;
+    --accent: #137a6b;        /* SPS green from the paper */
+    --accent-soft: #d9ece8;
+    --orange: #d35e2e;        /* Standard orange */
+    --orange-soft: #f5dcc8;
+    --warm: #f6f1e3;          /* warm panel background */
+    --max-w: 920px;
+    --wide-w: 1040px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 18px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .sans { font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif; }
+  code, pre, .mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace; }
+
+  /* Top bar */
+  header.topbar {
+    border-bottom: 1px solid var(--rule);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: saturate(180%) blur(8px);
+  }
+  .topbar-inner {
+    max-width: var(--wide-w);
+    margin: 0 auto;
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: nowrap;
+  }
+  .brand {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+  }
+  .brand-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin-right: 8px;
+    transform: translateY(-1px);
+  }
+  .links {
+    display: flex;
+    gap: 10px;
+    flex-wrap: nowrap;
+    flex: none;
+  }
+  .btn {
+    font-family: "Inter", sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    border: 1px solid var(--rule-strong);
+    color: var(--ink);
+    background: var(--panel);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 120ms ease, transform 120ms ease;
+  }
+  .btn:hover { background: var(--warm); transform: translateY(-1px); }
+  .btn-primary {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+  .btn-primary:hover { background: #000; }
+  .btn svg { width: 16px; height: 16px; }
+
+  /* Article */
+  article {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 48px 32px 96px;
+  }
+  @media (max-width: 600px) {
+    article { padding: 36px 22px 72px; }
+  }
+  .hero {
+    max-width: var(--max-w);
+    margin: 0 auto 36px;
+    padding: 0 32px;
+  }
+  @media (max-width: 600px) {
+    .hero { padding: 0 22px; margin-bottom: 28px; }
+  }
+  h1.title {
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+    font-size: clamp(30px, 4.8vw, 46px);
+    line-height: 1.12;
+    letter-spacing: -0.022em;
+    margin: 28px 0 14px;
+    color: var(--ink);
+    text-align: center;
+  }
+  /* Cover: the title + model animation occupy the first full screen */
+  .hero-cover {
+    min-height: calc(100vh - 62px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    padding: 24px 0 28px;
+  }
+  .hero-head { display: flex; flex-direction: column; align-items: center; width: 100%; }
+  .hero-cover .title { white-space: nowrap; font-size: clamp(24px, 3.6vw, 36px); margin: 8px 0 14px; }
+  .hero-cover .spsanim { width: 100%; margin: 10px 0 0; }
+  .hero-cover .spsanim figcaption { font-size: 14px; }
+  .hero-cover .tldr { width: 100%; margin: 4px 0 12px; text-align: left; }
+  @media (max-width: 640px) {
+    .hero-cover .title { white-space: normal; font-size: clamp(24px, 6.2vw, 30px); }
+  }
+  /* Authors + affiliations */
+  .byline {
+    font-family: "Inter", sans-serif;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 26px;
+    margin: 4px 0 16px;
+  }
+  .author {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .author .aff { height: 20px; width: auto; display: block; }
+  .affil-legend {
+    font-family: "Inter", sans-serif;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px 30px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    letter-spacing: 0.01em;
+  }
+  .affil-legend .affil { display: inline-flex; align-items: center; gap: 8px; }
+  .affil-legend .aff-lg { height: 19px; width: auto; display: block; }
+  .affil-legend .aff-lg-hv { height: 26px; }
+  @media (max-width: 600px) {
+    .hero-cover { min-height: calc(100vh - 58px); }
+    .author { font-size: 15.5px; }
+    .author .aff { height: 18px; }
+  }
+  .meta {
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 36px;
+    letter-spacing: 0.01em;
+  }
+  .meta-item { display: flex; align-items: center; gap: 6px; }
+
+  h2 {
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: -0.012em;
+    line-height: 1.25;
+    margin: 64px 0 16px;
+    color: var(--ink);
+    position: relative;
+  }
+  h2::before {
+    content: "";
+    position: absolute;
+    top: -14px;
+    left: 0;
+    width: 32px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 1px;
+  }
+  h3 {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 1.35;
+    margin: 38px 0 10px;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+  }
+  p { margin: 0 0 18px; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 120ms ease; }
+  a:hover { text-decoration: none; border-bottom-color: var(--accent); }
+  p code, li code {
+    font-size: 0.88em;
+    background: var(--warm);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0.5px 5px;
+    color: var(--ink);
+  }
+  /* the <predict> token, typeset in monospace (matches the paper's typewriter convention) */
+  .ptok { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; }
+  /* model names, typeset in small caps (the paper reserves small caps for model names) */
+  .model { font-family: "Inter", sans-serif; font-variant: small-caps; font-variant-caps: all-small-caps; letter-spacing: 0.02em; }
+
+  /* TL;DR / takeaway boxes */
+  .tldr {
+    background: var(--warm);
+    border-left: 3px solid var(--accent);
+    padding: 20px 22px;
+    margin: 32px 0;
+    border-radius: 4px;
+  }
+  .tldr-label {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .tldr p { margin: 0; font-size: 17px; line-height: 1.55; }
+
+  .takeaway {
+    background: #f4f8f7;
+    border: 1px solid #d8e5e1;
+    border-left: 3px solid var(--accent);
+    padding: 14px 18px;
+    margin: 24px 0;
+    border-radius: 4px;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  .takeaway strong {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.01em;
+  }
+
+  /* Figures */
+  figure {
+    margin: 48px 0;
+    text-align: center;
+    /* White "break" panel: figures export on white, so a white band lets them
+       sit seamlessly while giving the cream reading column a visual rest. */
+    background: #ffffff;
+    padding: 26px 30px 22px;
+    border-radius: 10px;
+    border: 1px solid var(--rule);
+    box-shadow: 0 1px 2px rgba(28, 28, 30, 0.04);
+  }
+  /* The hero schematic is a themed SVG (not a white-background plot); keep it on the page. */
+  figure.spsanim {
+    background: none;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+  }
+  figure.wide {
+    margin-left: calc((var(--max-w) - var(--wide-w)) / 2);
+    margin-right: calc((var(--max-w) - var(--wide-w)) / 2);
+    max-width: var(--wide-w);
+  }
+  @media (max-width: 1100px) {
+    figure.wide { margin-left: 0; margin-right: 0; max-width: 100%; }
+  }
+  @media (max-width: 600px) {
+    figure { padding: 16px 16px 14px; }
+  }
+  figure img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border-radius: 4px;
+  }
+  figcaption {
+    font-family: "Inter", sans-serif;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin-top: 16px;
+    text-align: left;
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  figcaption strong { color: var(--ink); font-weight: 600; }
+
+  /* Architecture SVG container */
+  .arch {
+    background: var(--warm);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 28px 20px 22px;
+  }
+  .arch-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+    align-items: end;
+  }
+  @media (max-width: 720px) {
+    .arch-row { grid-template-columns: 1fr; }
+  }
+  .arch-col-title {
+    text-align: center;
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 14px;
+    color: var(--ink);
+  }
+  .legend {
+    display: flex;
+    gap: 22px;
+    justify-content: center;
+    margin-top: 18px;
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    color: var(--ink-soft);
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .swatch {
+    width: 18px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .swatch.dashed {
+    background: transparent;
+    border: 1.5px dashed var(--muted);
+  }
+  .swatch.standard { background: #4b6f8c; }
+
+  /* Tokens / blocks in the SVG-like diagram */
+  .stack { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .row {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    align-items: center;
+  }
+  .tok {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    width: 26px;
+    height: 22px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    line-height: 1;
+  }
+  .tok.x { background: #4b6f8c; }
+  .tok.rho { background: #b9c8d3; color: #2a3a48; }
+  .tok.pred { background: var(--orange); }
+  .tok.layer-x { background: #6f8ca6; border-radius: 3px; }
+  .tok.layer-rho {
+    background: transparent;
+    border: 1.5px dashed #6f8ca6;
+    color: #6f8ca6;
+  }
+  .tok.layer-rho-sps {
+    background: transparent;
+    border: 1.5px dashed var(--muted);
+    color: var(--muted);
+  }
+  .layer-label {
+    font-family: "Inter", sans-serif;
+    font-size: 11px;
+    color: var(--muted);
+    margin-right: 8px;
+    width: 18px;
+    text-align: right;
+  }
+  .dots {
+    font-family: "JetBrains Mono", monospace;
+    color: var(--muted);
+    font-size: 14px;
+    margin: 2px 0;
+  }
+  .arrow {
+    font-family: "JetBrains Mono", monospace;
+    color: var(--muted);
+    font-size: 12px;
+    margin: 0 2px;
+  }
+
+  /* ===== Interactive results chart (replaces the results table) ===== */
+  .results-fig {
+    margin: 28px 0;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    background: var(--panel);
+    padding: 16px 18px 14px;
+  }
+  .metric-tabs { margin-bottom: 14px; }
+  .results-topline {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin-bottom: 6px;
+  }
+  .results-legend {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .results-legend .rlg { display: inline-flex; align-items: center; gap: 6px; }
+  .results-legend .rlg-sw { width: 14px; height: 10px; border-radius: 2px; display: inline-block; }
+  .results-hover {
+    font-family: "Inter", sans-serif;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.45;
+    text-align: center;
+    min-height: 2.8em;   /* reserve two lines so the readout never reflows the page */
+    margin-top: 8px;
+    padding: 0 4px;
+  }
+  .results-hover .pill {
+    display: inline-block;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    border: 1px solid;
+    border-radius: 3px;
+    padding: 1px 6px;
+    margin-right: 2px;
+  }
+  .results-hover .rhv-delta { color: var(--muted); }
+  .results-hover .rhv-good { color: var(--accent); font-weight: 600; }
+  .results-hover .rhv-bad { color: var(--orange); font-weight: 600; }
+  .results-scroll { overflow-x: auto; padding: 2px 0; }
+  .results-chart { display: block; margin: 0 auto; width: 100%; min-width: 520px; max-width: 608px; height: auto; }
+  .results-chart .rbar { transition: stroke-width 100ms ease; cursor: default; }
+  .results-cap {
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin-top: 10px;
+  }
+  .results-cap strong { color: var(--ink); font-weight: 600; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+
+  /* Inline notes */
+  .note {
+    font-family: "Inter", sans-serif;
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    background: var(--warm);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 16px 0;
+  }
+
+  /* Equation block */
+  .eqn {
+    overflow-x: auto;
+    margin: 18px 0;
+    padding: 6px 0;
+  }
+
+  ul, ol { padding-left: 22px; }
+  li { margin-bottom: 6px; }
+
+  /* Footer */
+  footer.foot {
+    border-top: 1px solid var(--rule);
+    margin-top: 64px;
+    padding: 36px 28px 56px;
+    text-align: center;
+    color: var(--muted);
+    font-family: "Inter", sans-serif;
+    font-size: 14px;
+  }
+  footer.foot .links { justify-content: center; margin-top: 14px; }
+
+  /* ===== Interactive architecture explorer ===== */
+  .explore {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    margin: 40px 0 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+  }
+  .explore-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 18px 24px 16px;
+    background: var(--warm);
+    border-bottom: 1px solid var(--rule);
+  }
+  .explore-eyebrow {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .explore-title {
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin: 0;
+  }
+  .explore-subtitle {
+    font-family: "Inter", sans-serif;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin: 0;
+    max-width: 360px;
+    text-align: right;
+  }
+  @media (max-width: 600px) {
+    .explore-subtitle { text-align: left; max-width: none; }
+  }
+  .explore-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 24px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--rule);
+  }
+  .mode-tabs {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 3px;
+    background: var(--warm);
+    border-radius: 8px;
+    border: 1px solid var(--rule);
+  }
+  .mode-tab {
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    font-variant: small-caps;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+    background: transparent;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+  }
+  .mode-tab:hover { color: var(--ink); background: var(--bg); }
+  .mode-tab.active {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .slider-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    color: var(--ink-soft);
+    transition: opacity 200ms ease;
+  }
+  .slider-group label {
+    font-weight: 500;
+    color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .kbd {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    background: var(--warm);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1px 6px;
+    color: var(--ink);
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  .slider-group input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 132px;
+    height: 4px;
+    background: var(--rule-strong);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  .slider-group input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  }
+  .slider-group input[type=range]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+  }
+  .slider-val {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--warm);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 2px 8px;
+    min-width: 26px;
+    text-align: center;
+  }
+
+  .explore-body { padding: 24px 24px 22px; }
+  .explore-grid { display: block; }
+
+  /* Matrix + aligned architecture strip */
+  .matrix-block { min-width: 0; }
+  .matrix-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+  .lg { display: inline-flex; align-items: center; gap: 6px; }
+  .lg-sw {
+    width: 14px;
+    height: 10px;
+    border-radius: 2px;
+  }
+  .lg-sw.teal { background: var(--accent); }
+  .lg-sw.orange { background: var(--orange); }
+  .lg-sw.evicted {
+    background-image: repeating-linear-gradient(45deg, var(--rule-strong) 0 2px, transparent 2px 5px);
+    background-color: #f6f1e3;
+    border: 1px solid var(--rule-strong);
+  }
+  .lg-sw.inwin {
+    background: #f6f1e3;
+    border: 1.3px dashed #b7b09a;
+  }
+  .lg-ell {
+    font-family: "Source Serif 4", serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1;
+  }
+  /* Readout of the hovered row; sits directly below the matrix. */
+  .matrix-hover {
+    font-family: "Inter", sans-serif;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.45;
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 12px;
+    min-height: 2.6em;   /* reserve two lines so hovering never reflows the page */
+  }
+  .matrix-hover .pill {
+    display: inline-block;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11.5px;
+    background: var(--warm);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1px 6px;
+    margin: 0 2px;
+    color: var(--ink);
+  }
+  .matrix-hover .pill.teal { background: #e0eeeb; border-color: #b9d4cd; color: var(--accent); }
+  .matrix-hover .pill.orange { background: #fbe8d8; border-color: #ecc9ad; color: var(--orange); }
+  .matrix-scroll {
+    overflow-x: auto;
+    padding: 4px 2px 6px;
+  }
+  .attn-matrix { display: block; max-width: 100%; margin: 0 auto; }
+  .attn-matrix .cell {
+    transition: opacity 120ms ease;
+  }
+  .attn-matrix .cell.attended-x { fill: var(--accent); }
+  .attn-matrix .cell.attended-rho { fill: var(--orange); }
+  .attn-matrix .cell.evicted { fill: url(#hatch); }
+  .attn-matrix .cell.cut { fill: #f7f3e6; }
+  .attn-matrix .cell.dim { opacity: 0.45; }
+  .attn-matrix .cell.full { opacity: 1; }
+  .attn-matrix .cell.standard { opacity: 0.7; }
+  .attn-matrix .cell.standard.full { opacity: 1; }
+  .attn-matrix .row-band {
+    fill: var(--ink);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+  }
+  .attn-matrix .row-band.active { opacity: 0.05; }
+  .attn-matrix text { user-select: none; }
+
+  .readout {
+    margin-top: 18px;
+    padding: 14px 16px;
+    background: #fdfcf6;
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    font-family: "Inter", sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .readout strong { color: var(--accent); font-weight: 600; }
+  .readout.r-standard { border-left-color: var(--ink-soft); }
+  .readout.r-standard strong { color: var(--ink-soft); }
+  .readout.r-delayed { border-left-color: var(--orange); }
+  .readout.r-delayed strong { color: var(--orange); }
+  .readout.r-twox { border-left-color: #b88a3e; }
+  .readout.r-twox strong { color: #8b6f3e; }
+
+  .explore-caption {
+    font-family: "Inter", sans-serif;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 14px 4px 0;
+    max-width: 720px;
+  }
+  .explore-caption strong { color: var(--ink); font-weight: 600; }
+
+  /* ---- Section navigation: horizontal links inside the top bar ---- */
+  h2[id], .hero[id] { scroll-margin-top: 76px; }
+
+  .topbar .toc { font-family: "Inter", sans-serif; flex: 1 1 auto; min-width: 0; }
+  .toc ol {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; align-items: center; gap: 2px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .toc ol::-webkit-scrollbar { display: none; }
+  .toc li { flex: none; }
+  .toc-line, .toc-dot { display: none; }   /* unused in the top-bar layout */
+  .toc a {
+    display: block;
+    color: var(--muted);
+    border-bottom: none; text-decoration: none;
+    font-size: 13.5px; letter-spacing: 0.01em; white-space: nowrap;
+    padding: 6px 11px; border-radius: 6px;
+    transition: color 140ms ease, background 140ms ease;
+  }
+  .toc-label { font-size: inherit; letter-spacing: inherit; }
+  .toc a:hover { color: var(--ink-soft); background: var(--warm); }
+  .toc li.active a { color: var(--accent); font-weight: 600; background: var(--accent-soft); }
+  @media (max-width: 600px) {
+    .toc a { padding: 6px 9px; font-size: 13px; }
+  }
+
+  /* ---- Reveal-on-scroll (class added by JS, so no-JS shows everything) ---- */
+  .reveal { opacity: 0; transform: translateY(14px); }
+  .reveal.in {
+    opacity: 1;
+    transform: none;
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, .reveal.in { opacity: 1 !important; transform: none !important; transition: none; }
+    .toc a, .toc-dot, .toc-line-fill { transition: none; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <nav class="toc" aria-label="On this page">
+      <ol>
+        <li><a href="#top"><span class="toc-label">Overview</span></a></li>
+        <li><a href="#tension"><span class="toc-label">The tension</span></a></li>
+        <li><a href="#model"><span class="toc-label">The model</span></a></li>
+        <li><a href="#results"><span class="toc-label">Results</span></a></li>
+        <li><a href="#ablations"><span class="toc-label">Ablations</span></a></li>
+        <li><a href="#gradients"><span class="toc-label">Gradients</span></a></li>
+        <li><a href="#next"><span class="toc-label">What's next</span></a></li>
+      </ol>
+    </nav>
+    <div class="links">
+      <a class="btn" href="https://github.com/lil-lab/sps" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.32-1.28-1.67-1.28-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.24 2.75.12 3.04.73.8 1.18 1.82 1.18 3.08 0 4.42-2.69 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.18c0 .31.21.67.79.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+        Code
+      </a>
+      <a class="btn btn-primary" href="https://arxiv.org/abs/2607.01218" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6zm7 1.5L18.5 9H14a1 1 0 0 1-1-1V3.5zM8 13h8v1.5H8V13zm0 3h8v1.5H8V16zm0 3h5v1.5H8V19z"/></svg>
+        Paper
+      </a>
+    </div>
+  </div>
+</header>
+
+<div class="hero" id="top">
+  <div class="hero-cover">
+    <div class="hero-head">
+    <h1 class="title">The State-Prediction Separation Hypothesis</h1>
+    <div class="byline">
+      <span class="author">Giovanni Monea<img class="aff" src="assets/cornell.svg" alt="Cornell University" title="Cornell University"></span>
+      <span class="author">Nathan Godey<img class="aff" src="assets/cornell.svg" alt="Cornell University" title="Cornell University"></span>
+      <span class="author">Kianté Brantley<img class="aff" src="assets/harvard_shield.svg" alt="Harvard University" title="Harvard University"></span>
+      <span class="author">Yoav Artzi<img class="aff" src="assets/cornell.svg" alt="Cornell University" title="Cornell University"></span>
+    </div>
+    <div class="affil-legend">
+      <span class="affil"><img class="aff-lg" src="assets/cornell.svg" alt="">Cornell University</span>
+      <span class="affil"><img class="aff-lg aff-lg-hv" src="assets/harvard_wordmark.svg" alt="Harvard University"></span>
+    </div>
+    </div>
+  <div class="tldr">
+    <div class="tldr-label">TL;DR</div>
+    <p>
+      Every hidden state in a Transformer is asked to <em>predict</em> the next token and to <em>store state</em> for later predictions. We hypothesize that those two roles compete: they are different tasks that push the hidden state to store different information. We design a variant (<strong>SPS</strong>) that routes each onto its own token stream via an interleaved <span class="ptok">&lt;predict&gt;</span> slot. Across five scales (53M&ndash;1.68B), <span class="model">SPS</span> lowers validation NLL (negative log&#x2011;likelihood), improves out&#x2011;of&#x2011;distribution generalization, and raises zero&#x2011;shot accuracy by 2&ndash;3 points, all with the same persistent KV cache as a <span class="model">Standard</span> Transformer. The advantage widens with scale: at 1.68B, <span class="model">SPS</span> learns as much from 18B tokens as <span class="model">Standard</span> does from 47B.
+    </p>
+  </div>
+  <figure class="wide spsanim" aria-label="Animated schematic of State-Prediction Separation: real tokens write persistent KV-cache entries while inserted predict tokens hold ephemeral activations and emit each next-token prediction.">
+  <style>
+  .spsanim{--sps-dur:16s;margin:6px 0 4px;}
+  .spsanim svg{width:100%;height:auto;display:block;font-family:var(--sans,system-ui,sans-serif);}
+  .spsanim .sps-layer{fill:var(--panel);stroke:var(--rule-strong);stroke-width:1.4;}
+  .spsanim .sps-kv{fill:#b4c9ec;stroke:#24468f;stroke-width:1.5;}
+  .spsanim .sps-eph{fill:#eef3fc;stroke:#9db8e6;stroke-width:1.3;stroke-dasharray:4 3;}
+  .spsanim .sps-xin{fill:#24468f;stroke:#1b3672;stroke-width:1;}
+  .spsanim .sps-xt{fill:#fff;font-size:15px;}
+  .spsanim .sps-rho{fill:#d5e3f8;stroke:#7aa0dd;stroke-width:1.2;}
+  .spsanim .sps-rt{fill:#2c4a86;font-size:15px;}
+  .spsanim .sps-pred{fill:var(--orange-soft);stroke:var(--orange);stroke-width:1.3;}
+  .spsanim .sps-pt{fill:var(--orange);font-size:15px;font-weight:600;}
+  .spsanim .sps-hat{fill:none;stroke:var(--orange);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+  .spsanim .sps-sub{font-size:10px;}
+  .spsanim .sps-leg-t{fill:var(--ink-soft);font-size:14px;}
+  .spsanim .sps-rowlab{fill:var(--muted);font-size:10.5px;font-weight:600;letter-spacing:.08em;}
+  .spsanim .sps-in{opacity:1}
+  .spsanim .sps-ltag{fill:var(--muted);font-size:9px;font-weight:700;letter-spacing:.02em;}
+  .spsanim .sps-leg-h{fill:var(--muted);font-size:10.5px;font-weight:700;letter-spacing:.06em;}
+  /* The per-cell reveal keyframes are generated in JS (buildSpsAnim) and injected as
+     #sps-anim-kf, since 4 layers x 4 tokens is impractical to hand-author. Cells start
+     visible (opacity:1) so a no-JS / reduced-motion view shows the steady static state;
+     the injected animation drives each cell from 0 in a one-token-at-a-time climb. */
+  @media (prefers-reduced-motion: reduce){
+    .spsanim *{animation:none !important;opacity:1 !important;}
+    /* Static fallback shows the steady window: predict entries past the window evicted. */
+    .spsanim .sps-evd{opacity:0 !important;}
+  }
+  </style>
+  <svg class="sps-svg" role="img" xmlns="http://www.w3.org/2000/svg"><!-- built by buildSpsAnim() --></svg>
+  <figcaption>
+    <strong>State&#8209;Prediction Separation, in motion.</strong>
+    Real tokens $x_i$ write <strong>persistent</strong> KV&#8209;cache entries (filled slots); each inserted <span class="ptok">&lt;predict&gt;</span> token $\rho_i$ holds an <strong>ephemeral</strong> entry (dashed) and emits the next&#8209;token prediction $\hat x_{i+1}$ (orange). Each ephemeral entry is evicted once it leaves a short sliding window.
+  </figcaption>
+  </figure>
+  </div>
+</div>
+
+<article>
+
+<h2 id="tension">The tension SPS targets</h2>
+
+<p>
+  In a standard autoregressive Transformer, the hidden state $h_i$ at position $i$ produces two things:
+</p>
+<ul>
+  <li>the <em>immediate</em> prediction for $x_{i+1}$ via the language&#x2011;model head; and</li>
+  <li>the KV entry $s_i$ that every later position $j > i$ will read from.</li>
+</ul>
+<p>
+  To see the two roles separately, picture each position as having its own copy of the parameters: write $\theta_i$ for the copy that produces $h_i$. By linearity, the gradient at that position splits into two terms, one for each role:
+</p>
+<div class="eqn">
+  $$
+  \nabla_{\theta_i} \mathcal{L} \;=\;
+  \underbrace{\tfrac{1}{T-1}\,\nabla_{\theta_i} \ell_i}_{\text{Prediction}}
+  \;+\;
+  \underbrace{\tfrac{1}{T-1}\,\sum_{j=i+1}^{T-1} \nabla_{\theta_i} \ell_j}_{\text{State}}.
+  $$
+</div>
+<p>
+  Both signals are routed through the <em>same</em> $h_i$, with no architectural way to keep them apart. Empirical work (<a href="https://arxiv.org/abs/2404.00859" target="_blank" rel="noopener">Wu et al., 2024</a>) shows pretrained Transformers pre&#x2011;cache: part of $h_i$ carries information that is useful for future tokens but not for the current prediction, rather than information that serves both. This effect grows with scale.
+</p>
+
+<div class="tldr" style="border-left-color: var(--orange); background: #fbf3eb;">
+  <div class="tldr-label" style="color: var(--orange);">Hypothesis (informal)</div>
+  <p>
+    Next&#x2011;token prediction and state storage <em>compete</em> when forced through one shared hidden state. Routing them through separate streams yields better language modeling.
+  </p>
+</div>
+
+<h2 id="model">The SPS Transformer</h2>
+
+<p>
+  We augment the input sequence with a learned <span class="ptok">&lt;predict&gt;</span> token $\rho_i$ inserted after every real token:
+</p>
+<div class="eqn">
+  $$
+  x = (x_1, \ldots, x_T) \;\;\longrightarrow\;\; (x_1, \rho_1,\; x_2, \rho_2,\; \ldots,\; x_T, \rho_T).
+  $$
+</div>
+<p>
+  Loss is applied only at $\rho_i$ positions: each $\rho_i$ predicts $x_{i+1}$. The attention mask sets what persists: <strong>input entries $x_i$ are persistent</strong> in the KV cache, and <strong><span class="ptok">&lt;predict&gt;</span> entries $\rho_i$ are evicted</strong> once they leave a sliding window of size $w$. So input representations accumulate the full state&#x2011;preparation gradient $\sum_{j>i}\nabla_{\theta_{x_i}} \ell_j$, while $\rho_i$'s gradient is dominated by the immediate prediction term $\nabla_{\theta_{\rho_i}} \ell_i$.
+</p>
+
+<p>
+  At inference the overhead is minimal. The persistent KV cache holds only input tokens, exactly matching the <span class="model">Standard</span> Transformer's footprint. A small $w$&#x2011;slot ring buffer keeps the most recent <span class="ptok">&lt;predict&gt;</span> entries. Each generated token triggers one decode step that forwards $(x_i, \rho_i)$ jointly and reads next&#x2011;token logits from the <span class="ptok">&lt;predict&gt;</span> hidden state. Because autoregressive decoding is memory&#x2011;bound, forwarding the extra token adds negligible latency, the same property that motivates speculative decoding.
+</p>
+
+<h2 id="results">SPS matches Standard on a fraction of the data</h2>
+
+<p>
+  We pretrain five model sizes (XS&nbsp;53M, S&nbsp;131M, M&nbsp;379M, L&nbsp;831M, XL&nbsp;1.68B) on FineWeb&#x2011;Edu for 20B tokens (18B before the final learning&#x2011;rate decay, which we call the &ldquo;pre&#x2011;decay&rdquo; budget), following the GPT&#x2011;2 recipe and using nanoGPT as the training scaffold. All variants share the same backbone, parameter count, and hyperparameters; they differ only in attention pattern. We also train <span class="model">Standard</span> for 40B tokens (47B at XL) for a fair GPU&#x2011;hours comparison.
+</p>
+
+<figure class="wide">
+  <img src="figures/history_given_gpu_xl_abstract.png" alt="At 1.68B parameters, SPS matches a Standard Transformer trained on 47B tokens while using 2.6x fewer tokens." />
+  <figcaption>
+    <strong>At 1.68B parameters, State&#x2011;Prediction Separation matches a <span class="model">Standard</span> Transformer trained on 47B tokens while using 2.6&times; fewer tokens (pre&#x2011;decay).</strong>
+    At an 18B&#x2011;token pre&#x2011;decay budget it already reaches $\Delta\mathrm{NLL} = -0.071$ versus the <span class="model">Standard</span> baseline.
+  </figcaption>
+</figure>
+
+<div class="takeaway">
+  <strong>Takeaway 1.</strong> <span class="model">SPS</span> reaches <span class="model">Standard</span>'s quality on roughly half the training data, and the data&#x2011;efficiency ratio widens with scale. At the S scale (10B tokens), a 3&#x2011;seed sweep confirms the gap over <span class="model">Standard</span> is significant at $p < 0.005$.
+</div>
+
+<h2 id="ablations">Separation helps at every scale, and for the right reason</h2>
+
+<p>
+  <span class="model">SPS</span> adds compute (a forward pass per input token) and an extra mechanism (the <span class="ptok">&lt;predict&gt;</span> insertion). Two ablations isolate whether <em>separation</em>, specifically, is what helps.
+</p>
+
+<p>
+  <strong>The two baselines.</strong>
+  <strong><span class="model">2&times; Memory</span></strong> keeps every <span class="ptok">&lt;predict&gt;</span> entry persistent, doubling the cache; <strong><span class="model">Delayed State</span></strong> persists the <span class="ptok">&lt;predict&gt;</span> slot instead of the input. Flip to the <span class="model">Delayed State</span> and <span class="model">2&times; Memory</span> tabs in the explorer below to see each pattern next to <span class="model">SPS</span>.
+</p>
+
+<div class="explore" aria-label="Interactive architecture explorer">
+  <div class="explore-controls">
+    <div class="mode-tabs" role="tablist" aria-label="Architecture variant">
+      <button class="mode-tab" data-mode="standard" role="tab"><span class="model">Standard</span></button>
+      <button class="mode-tab active" data-mode="sps" role="tab">SPS</button>
+      <button class="mode-tab" data-mode="delayed" role="tab"><span class="model">Delayed State</span></button>
+      <button class="mode-tab" data-mode="twox" role="tab"><span class="model">2&times; Memory</span></button>
+    </div>
+    <div class="slider-group">
+      <label>window <span class="kbd">w</span></label>
+      <input class="w-slider" type="range" min="0" max="5" value="3" step="1" aria-label="predict window size w" />
+      <span class="slider-val">3</span>
+    </div>
+  </div>
+
+  <div class="explore-body">
+    <div class="explore-grid">
+      <div class="matrix-block">
+        <div class="matrix-legend">
+          <span class="lg"><span class="lg-sw teal"></span>x key</span>
+          <span class="lg"><span class="lg-sw orange"></span>&rho; key (<span class="ptok">&lt;predict&gt;</span>)</span>
+          <span class="lg"><span class="lg-sw inwin"></span>in window</span>
+          <span class="lg"><span class="lg-sw evicted"></span>evicted</span>
+          <span class="lg"><span class="lg-ell">ℓ</span> loss</span>
+        </div>
+        <div class="matrix-scroll">
+          <svg class="attn-matrix" role="img" aria-label="Causal self-attention grid: each row is a query token, each column a key it attends to; the aligned strip below shows the KV cache at the last step (kept, in-window, or evicted) and the loss taken at the predict positions"></svg>
+        </div>
+        <div class="matrix-hover">Hover a row to inspect.</div>
+      </div>
+    </div>
+
+    <div class="readout"></div>
+  </div>
+</div>
+
+<p class="explore-caption">
+  <strong><span class="model">Standard</span> versus <span class="model">SPS</span> and the two baselines.</strong>
+  A <span class="model">Standard</span> Transformer uses the same hidden state for state and prediction. <span class="model">SPS</span> interleaves a <span class="ptok">&lt;predict&gt;</span> token $\rho_i$ after each input. Loss is taken at $\rho_i$ slots; only $x_i$ slots stay persistent in the KV cache, and $\rho_i$ slots are evicted after a $w$&#x2011;step window (we use $w{=}64$, tuned at the small scale). Each row of the matrix is a query token; reading across gives the keys it attends to, up to itself on the diagonal. The aligned strip below shows the same model as of the final step: the KV cache (solid = kept, hatched = evicted), the input tokens, and the loss $\ell_i$. Switch tabs to compare <span class="model">SPS</span> against <span class="model">Standard</span> and the two baselines; hover any row to see exactly which keys it reads.
+</p>
+
+<figure class="wide">
+  <img src="figures/history_combined.png" alt="FineWeb-Edu validation NLL vs tokens seen (top) and GPU-hours (bottom) for five scales." />
+  <figcaption>
+    <strong>SPS reaches lower loss at every scale, whether we match tokens or compute.</strong>
+    FineWeb&#x2011;Edu validation NLL against training tokens (top row, <em>token parity</em>) and against GPU&#x2011;hours (bottom row, <em>compute parity</em>). <span class="model">SPS</span> stays below <span class="model">Standard</span> in both views, and even doubling <span class="model">Standard</span>&#x2019;s pre&#x2011;decay token budget from 18B to 36B does not close the gap.
+  </figcaption>
+</figure>
+
+<p>
+  <strong>At token parity, <span class="model">SPS</span> simply wins.</strong> Compared at the same number of training tokens (the top row of the figure), <span class="model">SPS</span> reaches lower validation NLL at every scale. Three results hold consistently across XS&ndash;XL:
+</p>
+<ol>
+  <li><strong>Validation NLL.</strong> At a matched token budget, <span class="model">SPS</span> lowers validation NLL by 0.042 at XS, growing to 0.068 at XL.</li>
+  <li><strong>Generalization.</strong> Held&#x2011;out NLL on four out&#x2011;of&#x2011;distribution corpora drops by 0.09&ndash;0.15, and zero&#x2011;shot accuracy on five standard benchmarks improves by 2.3&ndash;3.1 points.</li>
+  <li><strong>Inference efficiency.</strong> Same persistent KV footprint as <span class="model">Standard</span> (1.01&times;), throughput within 5&ndash;10% of <span class="model">Standard</span>.</li>
+</ol>
+
+<p>
+  <strong>And it holds at compute parity too.</strong> Each <span class="model">SPS</span> training step costs roughly 2&times; a <span class="model">Standard</span> step, since every input token is paired with an inserted <span class="ptok">&lt;predict&gt;</span> token, so a token&#x2011;matched comparison alone could look unfair to <span class="model">Standard</span>. The bottom row of the figure settles it by plotting loss against <em>GPU&#x2011;hours</em> instead of tokens: after a short initial phase, <span class="model">SPS</span> reaches any given validation loss in fewer total GPU&#x2011;hours than <span class="model">Standard</span>, and training <span class="model">Standard</span> on twice its pre&#x2011;decay budget (36B, and 47B at XL) still does not catch up. The doubled per&#x2011;step compute more than pays for itself: <span class="model">SPS</span> is the cheaper model to train.
+</p>
+
+<figure class="results-fig" aria-label="Results across model scales">
+  <div class="mode-tabs metric-tabs" role="tablist" aria-label="Metric">
+    <button class="mode-tab metric-tab active" data-metric="fw" role="tab">FineWeb&#x2011;Edu NLL</button>
+    <button class="mode-tab metric-tab" data-metric="corp" role="tab">Corpus NLL</button>
+    <button class="mode-tab metric-tab" data-metric="acc" role="tab">Task accuracy</button>
+    <button class="mode-tab metric-tab" data-metric="thr" role="tab">Throughput</button>
+    <button class="mode-tab metric-tab" data-metric="mem" role="tab">Peak memory</button>
+  </div>
+  <div class="results-topline">
+    <div class="results-legend"></div>
+  </div>
+  <div class="results-scroll">
+    <svg class="results-chart" role="img" aria-label="Grouped bar chart: the absolute value of the selected metric for Standard and each variant, at every model scale."></svg>
+  </div>
+  <div class="results-hover">Hover a bar for the exact value.</div>
+  <figcaption class="results-cap">
+    Each group is a model scale; within it, one bar per method shows the metric's <strong>absolute value</strong>, with <span class="model">Standard</span> included as the grey bar. The y-axis is zoomed to the data range so the gaps are legible, and its label marks whether lower or higher is better for the selected metric. Hover any bar for its exact value and margin over <span class="model">Standard</span>.
+  </figcaption>
+  <div class="results-sr sr-only"></div>
+</figure>
+
+<h3>It is not just &ldquo;more memory.&rdquo;</h3>
+<p>
+  <strong><span class="model">2&times; Memory</span></strong> uses the same per&#x2011;step compute as <span class="model">SPS</span> but keeps every <span class="ptok">&lt;predict&gt;</span> entry persistent. So <span class="ptok">&lt;predict&gt;</span> entries now serve <em>both</em> as a prediction site and as a state carrier for later queries (exactly the conflation <span class="model">SPS</span> removes), at the cost of <strong>doubling</strong> the persistent KV cache. <span class="model">SPS</span>, with half the persistent state, beats it on validation NLL at every scale. The advantage is not capacity&#x2011;based.
+</p>
+
+<div class="takeaway">
+  <strong>Takeaway 2.</strong> <span class="model">SPS</span> outperforms a model with twice its persistent state. Keeping <span class="ptok">&lt;predict&gt;</span> entries persistent forces them to play both roles: the conflation <span class="model">SPS</span> removes.
+</div>
+
+<h3>It is not just &ldquo;extra compute before each prediction.&rdquo;</h3>
+<p>
+  <strong><span class="model">Delayed State</span></strong> matches <span class="model">SPS</span>'s per&#x2011;step compute and <span class="model">Standard</span>'s persistent&#x2011;cache size, but commits the persistent state at the $\rho_i$ slot, one step <em>after</em> the input. The two streams aren't separated: $\rho_i$ still serves as both prediction and state. <span class="model">Delayed State</span> does improve over <span class="model">Standard</span> (the extra compute helps), but <span class="model">SPS</span> beats it by 0.019&ndash;0.021 in validation NLL and 0.05&ndash;0.10 in corpus NLL at every scale.
+</p>
+
+<div class="takeaway">
+  <strong>Takeaway 3.</strong> Even given an extra computation step before writing the persistent state, <span class="model">Delayed State</span> underperforms <span class="model">SPS</span>. Separation matters more than extra computation.
+</div>
+
+<h2 id="gradients">Why separation helps: the gradients</h2>
+
+<p>
+  We probe how each architecture allocates the prediction&#x2011;vs&#x2011;state gradient at training time. Again give each position its own copy of the parameters, writing $\theta_p$ for the copy that produces the hidden state at position $p$. In <span class="model">SPS</span> and <span class="model">Delayed State</span> each step has <em>two</em> such copies: the input slot $\theta_{x_i}$ and the predict slot $\theta_{\rho_i}$. For each source position $p$ and offset $k$, we back&#x2011;propagate the single step&#x2011;$k$&#x2011;ahead loss in isolation and form the ratio of the position&#x2011;$p$ gradient from $\ell_{i+k}$ to the one from the current&#x2011;step loss $\ell_i$:
+</p>
+<div class="eqn">
+  $$
+  r(p,\,k) \;=\; \frac{\bigl\lVert \nabla_{\theta_p}\, \ell_{i+k} \bigr\rVert_2}
+  {\bigl\lVert \nabla_{\theta_p}\, \ell_i \bigr\rVert_2}.
+  $$
+</div>
+
+<figure class="wide">
+  <img src="figures/gradient_params_fp.png" alt="Per-offset future/present gradient ratio for Standard, SPS, and Delayed State at five scales, log axis." />
+  <figcaption>
+    <strong>Where future&#x2011;loss gradient lands during training.</strong>
+    Per&#x2011;offset gradient ratio $r(p,\,k)$ for <span class="model">Standard</span> (single stream), <span class="model">SPS</span>, and <span class="model">Delayed State</span> at every scale. For <span class="model">SPS</span> and <span class="model">Delayed State</span>, solid curves are the input stream ($p{=}x_i$), dotted curves the prediction stream ($p{=}\rho_i$). <span class="model">SPS</span> keeps the input stream persistent, and it sustains future&#x2011;loss gradient at every offset; <span class="model">Delayed State</span> persists the prediction stream instead, and that stream stays low while the future&#x2011;loss gradient collects on its non&#x2011;persistent input stream, which falls below <span class="model">SPS</span> past the $w{=}64$ window.
+  </figcaption>
+</figure>
+
+<p>
+  <span class="model">SPS</span>'s input stream carries strictly <em>more</em> future&#x2011;loss gradient than <span class="model">Standard</span> at every offset, while its prediction stream carries strictly <em>less</em>. The two roles end up on different tokens, and because the input stream is the persistent one, that gradient lands on exactly the state that survives to serve later queries. <span class="model">Delayed State</span> inverts which stream persists: there the <em>prediction</em> stream $\rho_i$ carries the persistent state, and it is that stream that stays uniformly low. The gradient collects instead on the input stream, which stays respectable (comparable to or above <span class="model">Standard</span>). But in <span class="model">Delayed State</span> the input is the non&#x2011;persistent, windowed stream: its slot is evicted after the $w{=}64$ window, so past offset $k{=}64$ it falls below <span class="model">SPS</span> and can carry gradient forward only indirectly. In short, <span class="model">Delayed State</span> piles the future&#x2011;loss signal onto the stream it discards and starves the one it keeps.
+</p>
+
+<p>
+  Carrying future&#x2011;loss gradient at training time is necessary, but not sufficient: we need to check that <span class="model">SPS</span>'s persistent state is <em>actually used</em> at inference. For a trained model $M$, let $M_\omega$ be the same model run with its persistent cache forced to a sliding window of size $\omega$ (distinct from the prediction window $w$), and let $\ell_i(M)$ be the loss at document&#x2011;relative position $i$. The degradation from that restriction is:
+</p>
+<div class="eqn">
+  $$
+  \Delta\ell_{i}(M_{\omega}) \;=\; \ell_{i}(M_{\omega}) - \ell_{i}(M).
+  $$
+</div>
+<p>
+  We average each $\Delta\ell_i$ over 8,000 documents and plot it against the query position $i$.
+</p>
+
+<figure class="wide">
+  <img src="figures/analysis_plot_delta_nll.png" alt="Per-position loss degradation when each method's persistent state is restricted to a sliding window of size 64, plotted against query position." />
+  <figcaption>
+    <strong>How much the persistent state is actually used at inference.</strong>
+    Per&#x2011;position loss degradation $\Delta\ell_i(M_\omega)$ when each method's persistent state is restricted to a sliding window of size $\omega{=}64$, plotted against document&#x2011;relative query position. <span class="model">SPS</span>'s curve sits uniformly above <span class="model">Delayed State</span>'s, with a late&#x2011;position gap that narrows from $\sim$2.0&times; at XS to $\sim$1.3&times; at XL.
+  </figcaption>
+</figure>
+
+<div class="takeaway">
+  <strong>Takeaway 4.</strong> <span class="model">SPS</span> better separates current&#x2011;step&#x2011;loss and future&#x2011;loss gradients during training <em>and</em> produces a persistent state that is more important at inference than <span class="model">Delayed State</span>'s.
+</div>
+
+<h2 id="next">What's next</h2>
+
+<p>
+  <span class="model">SPS</span>'s per&#x2011;step training compute is roughly double <span class="model">Standard</span>'s because of the inserted <span class="ptok">&lt;predict&gt;</span> token. An obvious follow&#x2011;up is whether the same separation can be obtained more cheaply: a shallower or narrower prediction stream, or a sparser persistent state. The two streams currently share all parameters; giving each distinct attention/FFN parameters now that the roles are decoupled is a natural next step.
+</p>
+
+<p>
+  Two further compute&#x2011;limited gaps remain in the evidence. We pretrain on a single corpus (FineWeb&#x2011;Edu); the consistent gains on out&#x2011;of&#x2011;distribution corpora and zero&#x2011;shot tasks suggest the trend transfers, but we have not tested alternative mixtures. And our largest scale is 1.68B. The <span class="model">SPS</span>&#x2011;vs&#x2011;<span class="model">Standard</span> gap widens monotonically across XS&ndash;XL, suggesting the trend extends to still&#x2011;larger models, but verifying that directly would require substantially more compute than we had available.
+</p>
+
+<p>
+  This matters in a regime where high&#x2011;quality human&#x2011;generated text is projected to run out. Learning more from each token directly extends the runway for pretraining, and in our scaling trend the advantage grows with model size.
+</p>
+
+</article>
+
+<script>
+function initExplore(root, idx) {
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const T = 6;
+  const hatchId = 'evhatch-' + (idx || 0);   // unique per explorer, for evicted-slot hatch
+
+  // per-instance DOM handles (scoped to this widget)
+  const matrixEl = root.querySelector('.attn-matrix');
+  const matrixHoverEl = root.querySelector('.matrix-hover');
+  const sliderGroupEl = root.querySelector('.slider-group');
+  const sliderEl = root.querySelector('.w-slider');
+  const wValEl = root.querySelector('.slider-val');
+  const readoutEl = root.querySelector('.readout');
+
+  const firstTab = root.querySelector('.mode-tab.active') || root.querySelector('.mode-tab');
+  const state = { mode: firstTab ? firstTab.dataset.mode : 'sps', w: 3, hovered: null };
+
+  function positions() {
+    const out = [];
+    if (state.mode === 'standard') {
+      for (let i = 1; i <= T; i++) out.push({ step: i, type: 'x', label: 'x₁₂₃₄₅₆'[i-1] || ('x'+i) });
+    } else {
+      for (let i = 1; i <= T; i++) {
+        out.push({ step: i, type: 'x' });
+        out.push({ step: i, type: 'rho' });
+      }
+    }
+    return out;
+  }
+
+  function isPersistent(p) {
+    if (state.mode === 'standard') return true;
+    if (state.mode === 'twox') return true;
+    if (state.mode === 'sps') return p.type === 'x';
+    if (state.mode === 'delayed') return p.type === 'rho';
+    return false;
+  }
+
+  function isLoss(p) {
+    if (state.mode === 'standard') return true;
+    return p.type === 'rho';
+  }
+
+  function attends(qIdx, kIdx, pos) {
+    if (kIdx > qIdx) return { ok: false, reason: 'cut' };
+    const q = pos[qIdx], k = pos[kIdx];
+    if (state.mode === 'standard' || state.mode === 'twox') return { ok: true, kind: k.type };
+    if (isPersistent(k)) return { ok: true, kind: k.type };
+    // ephemeral key: self always visible (diff == 0). state.w counts prior steps the query can still see.
+    const diff = q.step - k.step;
+    if (diff <= state.w) return { ok: true, kind: k.type };
+    return { ok: false, reason: 'evicted' };
+  }
+
+  function labelHTML(p) {
+    const sym = p.type === 'x' ? 'x' : '&rho;';
+    return sym + '<sub>' + p.step + '</sub>';
+  }
+  function labelText(p) {
+    const sym = p.type === 'x' ? 'x' : 'ρ';
+    const subs = ['₁','₂','₃','₄','₅','₆'];
+    return sym + (subs[p.step-1] || p.step);
+  }
+
+  function renderTabs() {
+    root.querySelectorAll('.mode-tab').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === state.mode);
+    });
+    const hasW = state.mode === 'sps' || state.mode === 'delayed';
+    const sg = sliderGroupEl;
+    sg.style.opacity = hasW ? '1' : '0.32';
+    sg.style.pointerEvents = hasW ? 'auto' : 'none';
+  }
+
+  // The attention matrix is a standard causal self-attention grid: each ROW is a
+  // query token, each COLUMN a key it can read (drawn where key <= query). Directly
+  // below, sharing the exact same column grid, an aligned architecture strip shows
+  // the model as of the LAST step: LOSS over each predicted position, the KV CACHE
+  // (kept / in-window / evicted), and the INPUT tokens. The matrix's bottom row and
+  // the cache line up column-for-column.
+  function renderMatrix() {
+    const svg = matrixEl;
+    const pos = positions();
+    const N = pos.length;
+    const cell = N > 8 ? 34 : 40;
+
+    // palette, kept in sync with the CSS custom properties
+    const COL = {
+      ink: '#1c1c1e', muted: '#9d9a8e', rule: '#cfc9b8', ruleSoft: '#e7e1d0',
+      x: '#137a6b', rho: '#d35e2e', panel: '#fdfcf6', slot: '#f3efe2',
+    };
+
+    const padL = 68;      // left gutter: rotated QUERY axis + row / band labels
+    const padR = 10;
+    const gridTop = 24;   // room for the KEYS axis label on top
+    const grid = N * cell;
+    const gridLeft = padL;
+    const gridBottom = gridTop + grid;
+
+    // aligned architecture strip below the matrix (drawn as of the last step)
+    const dividerY = gridBottom + 12;
+    const lossY = dividerY + 8,  lossH = 20;
+    const cacheY = lossY + lossH + 12, cacheH = 30;
+    const inputY = cacheY + cacheH + 12, inputH = 30;
+    const W = padL + grid + padR;
+    const H = inputY + inputH + 10;
+
+    const colX = j => gridLeft + j * cell;
+    const colCx = j => colX(j) + cell / 2;
+    const rowY = i => gridTop + i * cell;          // query 1 at the top
+    const rowCy = i => rowY(i) + cell / 2;
+    state.geo = { cell, gridLeft, gridTop, grid, N };
+
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('width', W);
+    svg.setAttribute('height', H);
+    svg.innerHTML = '';
+
+    const add = (name, attrs) => {
+      const el = document.createElementNS(NS, name);
+      for (const a in attrs) el.setAttribute(a, attrs[a]);
+      svg.appendChild(el);
+      return el;
+    };
+    // A token label (x3 / rho2) = symbol + subscript, centred at (x, y).
+    const tokenText = (x, y, sym, step, fill, size) => {
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', x); t.setAttribute('y', y);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-family', '"JetBrains Mono", monospace');
+      t.setAttribute('font-size', size);
+      t.setAttribute('fill', fill);
+      t.appendChild(document.createTextNode(sym));
+      const sub = document.createElementNS(NS, 'tspan');
+      sub.setAttribute('font-size', Math.round(size * 0.72));
+      sub.setAttribute('dy', '3');
+      sub.textContent = step;
+      t.appendChild(sub);
+      svg.appendChild(t);
+    };
+
+    // defs: hatch fill for evicted keys / cache slots (one shared visual language)
+    const defs = document.createElementNS(NS, 'defs');
+    defs.innerHTML =
+      '<pattern id="hatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">' +
+        '<rect width="6" height="6" fill="#f6f1e3"/>' +
+        '<line x1="0" y1="0" x2="0" y2="6" stroke="#cfc9b8" stroke-width="2"/>' +
+      '</pattern>';
+    svg.appendChild(defs);
+
+    // hovered-row band (behind the cells)
+    add('rect', { 'class': 'row-band', x: gridLeft, y: gridTop, width: grid, height: cell });
+
+    // grid frame
+    add('rect', { x: gridLeft - 0.5, y: gridTop - 0.5, width: grid + 1, height: grid + 1,
+      fill: 'none', stroke: COL.rule, 'stroke-width': '1' });
+
+    // axis labels: KEYS across the top, QUERY rotated down the left
+    add('text', { x: gridLeft + grid / 2, y: 13, 'text-anchor': 'middle',
+      'font-family': '"Inter", sans-serif', 'font-size': '10', fill: '#7a7a7e',
+      'letter-spacing': '0.12em' }).textContent = 'KEYS';
+    add('text', { x: 12, y: gridTop + grid / 2, 'text-anchor': 'middle',
+      'font-family': '"Inter", sans-serif', 'font-size': '10', fill: '#7a7a7e',
+      'letter-spacing': '0.12em',
+      transform: 'rotate(-90, 12, ' + (gridTop + grid / 2) + ')' }).textContent = 'QUERY';
+
+    // query row labels (left), coloured by token type; query 1 at the top
+    for (let i = 0; i < N; i++) {
+      add('text', { x: padL - 8, y: rowCy(i) + 3.2, 'text-anchor': 'end',
+        'font-family': '"JetBrains Mono", monospace', 'font-size': N > 8 ? '10' : '12',
+        'font-weight': '600', fill: pos[i].type === 'x' ? COL.x : COL.rho
+      }).textContent = labelText(pos[i]);
+    }
+
+    // cells: row i (query) x col j (key), drawn where j <= i (causal triangle)
+    for (let i = 0; i < N; i++) {
+      for (let j = 0; j <= i; j++) {
+        const att = attends(i, j, pos);
+        let cls = 'cell';
+        if (att.ok) cls += att.kind === 'x' ? ' attended-x' : ' attended-rho';
+        else if (att.reason === 'evicted') cls += ' evicted';
+        else cls += ' cut';
+        add('rect', { x: colX(j) + 1, y: rowY(i) + 1, width: cell - 2, height: cell - 2,
+          rx: '2', 'data-q': i, 'data-k': j, 'class': cls });
+      }
+    }
+
+    // ---------- aligned architecture strip (state as of the last query) ----------
+    const qLast = N - 1;
+    add('line', { x1: gridLeft, y1: dividerY, x2: gridLeft + grid, y2: dividerY,
+      stroke: COL.ruleSoft, 'stroke-width': '1' });
+
+    // left-gutter band labels
+    const bandLab = (y, txt) => { add('text', { x: padL - 8, y: y, 'text-anchor': 'end',
+      'font-family': '"Inter", sans-serif', 'font-size': '9.5', 'font-weight': '600',
+      'letter-spacing': '0.03em', fill: COL.muted }).textContent = txt; };
+    bandLab(lossY + 13, 'LOSS');
+    bandLab(cacheY + cacheH / 2 + 3.5, 'KV CACHE');
+    bandLab(inputY + inputH / 2 + 3.5, 'INPUT');
+
+    // LOSS row: an ell over each position that carries a loss, with a wire down
+    let lossStep = 0;
+    for (let i = 0; i < N; i++) {
+      if (!isLoss(pos[i])) continue;
+      lossStep += 1;
+      const cx = colCx(i);
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', cx); t.setAttribute('y', lossY + 14);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-family', '"Source Serif 4", Georgia, serif');
+      t.setAttribute('font-size', '14'); t.setAttribute('font-style', 'italic');
+      t.setAttribute('fill', COL.ink);
+      t.appendChild(document.createTextNode('ℓ'));
+      const sub = document.createElementNS(NS, 'tspan');
+      sub.setAttribute('font-size', '9'); sub.setAttribute('dy', '3');
+      sub.setAttribute('font-style', 'normal'); sub.textContent = lossStep;
+      t.appendChild(sub);
+      svg.appendChild(t);
+      add('line', { x1: cx, y1: lossY + lossH - 3, x2: cx, y2: cacheY - 1,
+        stroke: COL.rule, 'stroke-width': '1' });
+    }
+
+    // KV CACHE row: a transformer block holding one slot per position; slot state as
+    // of the last query -- persistent = filled chip, in-window = dashed, evicted = hatch.
+    add('rect', { x: gridLeft - 3, y: cacheY, width: grid + 6, height: cacheH, rx: '6',
+      fill: COL.panel, stroke: COL.ink, 'stroke-width': '1' });
+    const slotH = cacheH - 8, slotY = cacheY + 4;
+    for (let i = 0; i < N; i++) {
+      const p = pos[i], base = p.type === 'x' ? COL.x : COL.rho, left = colX(i);
+      add('rect', { x: left + 2, y: slotY, width: cell - 4, height: slotH, rx: '3',
+        fill: COL.slot, stroke: COL.ruleSoft, 'stroke-width': '1' });
+      const ix = left + 4.5, iw = cell - 9, iy = slotY + 2.5, ih = slotH - 5;
+      if (isPersistent(p)) {
+        add('rect', { x: ix, y: iy, width: iw, height: ih, rx: '2',
+          fill: base, stroke: base, 'stroke-width': '1' });
+      } else if (attends(qLast, i, pos).ok) {
+        add('rect', { x: ix, y: iy, width: iw, height: ih, rx: '2', fill: base,
+          'fill-opacity': '0.16', stroke: base, 'stroke-width': '1.3', 'stroke-dasharray': '3 2.5' });
+      } else {
+        add('rect', { x: ix, y: iy, width: iw, height: ih, rx: '2', fill: 'url(#hatch)' });
+      }
+      add('line', { x1: colCx(i), y1: cacheY + cacheH + 1, x2: colCx(i), y2: inputY - 1,
+        stroke: COL.rule, 'stroke-width': '1' });
+    }
+
+    // INPUT row: solid token chip per position (doubles as the shared column axis)
+    for (let i = 0; i < N; i++) {
+      const p = pos[i], isX = p.type === 'x';
+      add('rect', { x: colX(i) + 2, y: inputY, width: cell - 4, height: inputH, rx: '4',
+        fill: isX ? COL.x : COL.rho });
+      tokenText(colCx(i), inputY + inputH / 2 + 3.8, isX ? 'x' : 'ρ', p.step,
+        '#ffffff', N > 8 ? 11 : 12);
+    }
+
+    svg.addEventListener('mousemove', onSvgMove);
+    svg.addEventListener('mouseleave', onSvgLeave);
+    function onSvgMove(ev) {
+      const svgPt = svg.createSVGPoint();
+      svgPt.x = ev.clientX; svgPt.y = ev.clientY;
+      const ctm = svg.getScreenCTM();
+      if (!ctm) return;
+      const local = svgPt.matrixTransform(ctm.inverse());
+      if (local.x < gridLeft || local.x > gridLeft + grid || local.y < gridTop || local.y > gridTop + grid) {
+        setHover(null);
+        return;
+      }
+      setHover(Math.floor((local.y - gridTop) / cell));
+    }
+    function onSvgLeave() { setHover(null); }
+  }
+
+  function setHover(qIdx) {
+    state.hovered = qIdx;
+    const g = state.geo;
+    const band = matrixEl && matrixEl.querySelector('.row-band');
+    if (qIdx == null || !g) {
+      if (band) band.classList.remove('active');
+      renderHoverReadout(null);
+      return;
+    }
+    if (band) {
+      band.setAttribute('y', g.gridTop + qIdx * g.cell);
+      band.classList.add('active');
+    }
+    renderHoverReadout(qIdx);
+  }
+
+  function renderHoverReadout(qIdx) {
+    const el = matrixHoverEl;
+    if (qIdx == null) {
+      el.innerHTML = '<span style="color:#9d9a8e">Hover a row to inspect.</span>';
+      return;
+    }
+    const pos = positions();
+    const q = pos[qIdx];
+    let attendsX = 0, attendsR = 0, evicted = 0;
+    const keys = [];
+    for (let c = 0; c <= qIdx; c++) {
+      const k = pos[c];
+      const att = attends(qIdx, c, pos);
+      if (att.ok) {
+        if (k.type === 'x') attendsX++;
+        else attendsR++;
+        keys.push({ k: k, kind: att.kind });
+      } else if (att.reason === 'evicted') {
+        evicted++;
+      }
+    }
+    const qSym = q.type === 'x' ? '<span class="pill teal">' + labelText(q) + '</span>' : '<span class="pill orange">' + labelText(q) + '</span>';
+    let parts = [];
+    if (attendsX) parts.push(attendsX + ' persistent x');
+    if (attendsR) parts.push(attendsR + ' &rho; in window');
+    if (evicted) parts.push(evicted + ' evicted');
+    const lossNote = isLoss(q) ? ', <strong>loss</strong> applied here' : '';
+    el.innerHTML = '<strong>Query</strong> ' + qSym + ' attends to ' + (parts.join(', ') || 'nothing') + lossNote + '.';
+  }
+
+  function renderReadout() {
+    const el = readoutEl;
+    let cls = 'readout';
+    let html = '';
+    if (state.mode === 'standard') {
+      cls += ' r-standard';
+      html = '<strong><span class="model">Standard</span> Transformer.</strong> Every token stays visible to all future tokens. Each hidden state has to carry both the immediate prediction and the state every later query reads from. Loss is taken at every position. Its persistent KV cache is the reference footprint: <strong>1.00×</strong>, one slot per step.';
+    } else if (state.mode === 'sps') {
+      const ww = state.w;
+      if (ww === 0) {
+        html = '<strong><span class="model">SPS</span> at w = 0.</strong> Input tokens $x_i$ stay visible to every future token. Predict tokens $\\rho_i$ are visible only to themselves, immediately evicted afterwards. The $\\rho$ slots become pure read-and-predict heads with no within-stream memory. Because only $x_i$ persists, the KV cache stays at <strong>1.00×</strong>, the same footprint as <span class="model">Standard</span>.';
+      } else {
+        html = '<strong><span class="model">SPS</span> at w = ' + ww + '.</strong> Input tokens $x_i$ stay visible to every future token (persistent KV). Predict tokens $\\rho_i$ are only visible from their own step and the next ' + ww + ' step(s) before being evicted. Loss applies only at $\\rho$ slots, so the input stream absorbs the future-loss gradient. Because only $x_i$ persists, the KV cache stays at <strong>1.00×</strong>, the same footprint as <span class="model">Standard</span>.';
+      }
+    } else if (state.mode === 'delayed') {
+      const ww = state.w;
+      cls += ' r-delayed';
+      html = '<strong><span class="model">Delayed State</span> at w = ' + ww + '.</strong> Predict tokens $\\rho_i$ stay visible to every future token (they carry the persistent state). Input tokens $x_i$ are visible only within their own step and the next ' + ww + ' step(s) before being evicted. The two streams are not separated: $\\rho_i$ still has to serve as both prediction site and state carrier. Only $\\rho_i$ persists, so the cache still sits at <strong>1.00×</strong>, matching <span class="model">Standard</span>: the memory win survives even though the separation does not.';
+    } else if (state.mode === 'twox') {
+      cls += ' r-twox';
+      html = '<strong><span class="model">2× Memory</span> baseline.</strong> Every token, both $x_i$ and $\\rho_i$, stays visible to all future tokens. The $\\rho$ slots end up serving as both prediction and state (the conflation <span class="model">SPS</span> removes), and the persistent cache doubles to <strong>2.00×</strong>, twice <span class="model">Standard</span>&#x2019;s footprint.';
+    }
+    el.className = cls;
+    el.innerHTML = html;
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise([el]).catch(() => {});
+    }
+  }
+
+  function render() {
+    renderTabs();
+    renderMatrix();
+    renderReadout();
+    renderHoverReadout(null);
+  }
+
+  // Bind
+  root.querySelectorAll('.mode-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.mode = btn.dataset.mode;
+      render();
+    });
+  });
+  sliderEl.addEventListener('input', (e) => {
+    state.w = +e.target.value;
+    wValEl.textContent = state.w;
+    render();
+  });
+
+  // Initial
+  render();
+}
+document.querySelectorAll('.explore').forEach(initExplore);
+
+// ---------------------------------------------------------------------------
+// Interactive results chart: replaces the 5x4x5 results table.
+// Bars show each method's change from the Standard baseline (the zero line);
+// oriented so UP = better for every metric. Hover a bar for absolute value + delta.
+// ---------------------------------------------------------------------------
+function initResultsChart(root) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = root.querySelector('.results-chart');
+  const legendEl = root.querySelector('.results-legend');
+  const hoverEl = root.querySelector('.results-hover');
+  const srEl = root.querySelector('.results-sr');
+
+  const SCALES = ['XS', 'S', 'M', 'L', 'XL'];
+  const PARAM = { XS: '53M', S: '131M', M: '379M', L: '831M', XL: '1.7B' };
+  // Absolute values, indices: 0 FineWeb-Edu NLL, 1 Corpus NLL, 2 Task acc %, 3 Throughput x, 4 Peak mem x.
+  const D = {
+    XS: { std: [3.107, 4.335, 44.9, 1.00, 1.00], twox: [3.073, 4.311, 47.3, 0.93, 1.81], delayed: [3.086, 4.312, 46.9, 0.94, 1.01], sps: [3.065, 4.243, 47.3, 0.94, 1.01] },
+    S:  { std: [2.858, 4.018, 49.5, 1.00, 1.00], twox: [2.829, 3.981, 51.1, 0.93, 1.81], delayed: [2.829, 3.992, 51.8, 0.94, 1.01], sps: [2.810, 3.913, 51.8, 0.94, 1.01] },
+    M:  { std: [2.648, 3.732, 55.8, 1.00, 1.00], twox: [2.610, 3.687, 57.3, 0.93, 1.81], delayed: [2.611, 3.701, 57.5, 0.95, 1.01], sps: [2.591, 3.627, 58.7, 0.95, 1.01] },
+    L:  { std: [2.537, 3.598, 60.1, 1.00, 1.00], twox: [2.495, 3.542, 62.1, 0.83, 1.78], delayed: [2.491, 3.532, 61.3, 0.90, 1.01], sps: [2.470, 3.484, 62.6, 0.90, 1.01] },
+    XL: { std: [2.458, 3.487, 63.2, 1.00, 1.00], twox: [2.411, 3.423, 64.3, 0.64, 1.75], delayed: [2.410, 3.433, 64.8, 0.94, 1.01], sps: [2.390, 3.338, 66.3, 0.94, 1.01] },
+  };
+  const METRICS = [
+    { key: 'fw',   idx: 0, label: 'FineWeb‑Edu NLL', axis: 'FineWeb‑Edu NLL',   better: 'lower',  aunit: '',  adec: 3, ddec: 3 },
+    { key: 'corp', idx: 1, label: 'Corpus NLL',      axis: 'Corpus NLL',        better: 'lower',  aunit: '',  adec: 3, ddec: 3 },
+    { key: 'acc',  idx: 2, label: 'Task accuracy',   axis: 'Task accuracy (%)', better: 'higher', aunit: '%', adec: 1, ddec: 1 },
+    { key: 'thr',  idx: 3, label: 'Throughput',      axis: 'Throughput (×)',    better: 'higher', aunit: '×', adec: 2, ddec: 2 },
+    { key: 'mem',  idx: 4, label: 'Peak memory',     axis: 'Peak memory (×)',   better: 'lower',  aunit: '×', adec: 2, ddec: 2 },
+  ];
+  const METHODS = [
+    { key: 'std',     name: 'Standard',      color: '#9d9a8e' },
+    { key: 'twox',    name: '2× Memory',     color: '#b88a3e' },
+    { key: 'delayed', name: 'Delayed State', color: '#d35e2e' },
+    { key: 'sps',     name: 'SPS',           color: '#137a6b' },
+  ];
+  // per-metric decimals for the y-axis tick labels (the data carries more precision)
+  const TDEC = { fw: 1, corp: 1, acc: 0, thr: 1, mem: 1 };
+
+  let metric = 'fw';
+  let hovered = null; // {sc, mk}
+
+  const m = () => METRICS.find(x => x.key === metric);
+  function signed(v, dec) { return (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(dec); }
+
+  function niceTicks(lo, hi, n) {
+    const span = (hi - lo) || 1;
+    const raw = span / n;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const norm = raw / mag;
+    const step = mag * (norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10);
+    const out = [];
+    const start = Math.ceil(lo / step - 1e-9) * step;
+    for (let t = start; t <= hi + 1e-9; t += step) out.push(Math.round(t / step) * step);
+    return out;
+  }
+
+  const el = (name, attrs) => {
+    const e = document.createElementNS(NS, name);
+    for (const a in attrs) e.setAttribute(a, attrs[a]);
+    return e;
+  };
+
+  function render() {
+    const M = m();
+    // absolute values for every method (Standard included); zoom the axis to the data
+    const vals = [];
+    SCALES.forEach(sc => METHODS.forEach(mk => vals.push(D[sc][mk.key][M.idx])));
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    let span = hi - lo; if (span < 1e-9) span = Math.abs(hi) || 1;
+    const vmin = lo - span * 0.12, vmax = hi + span * 0.16;
+
+    const barW = 16, barGap = 4, groupGap = 26;
+    const gInner = METHODS.length * barW + (METHODS.length - 1) * barGap;
+    const padL = 70, padR = 14, padT = 18, padB = 48;
+    const plotW = SCALES.length * gInner + (SCALES.length - 1) * groupGap;
+    const plotH = 224;
+    const W = padL + plotW + padR, H = padT + plotH + padB;
+    const y = v => padT + (vmax - v) / (vmax - vmin) * plotH;
+    const y0 = padT + plotH;    // axis floor (bars grow up from here)
+
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('width', W);
+    svg.setAttribute('height', H);
+    svg.innerHTML = '';
+
+    // gridlines + y tick labels in the metric's own units
+    niceTicks(vmin, vmax, 4).forEach(t => {
+      const yy = y(t);
+      svg.appendChild(el('line', { x1: padL, y1: yy, x2: padL + plotW, y2: yy,
+        stroke: '#ece7d8', 'stroke-width': 1 }));
+      const tl = el('text', { x: padL - 8, y: yy + 3.4, 'text-anchor': 'end',
+        'font-family': '"Inter", sans-serif', 'font-size': '10', fill: '#9d9a8e' });
+      tl.textContent = t.toFixed(TDEC[M.key]) + M.aunit;
+      svg.appendChild(tl);
+    });
+
+    // rotated y-axis title: metric name, with the better-direction note beside it
+    const axisMid = padT + plotH / 2;
+    const yt = el('text', { x: 18, y: axisMid, 'text-anchor': 'middle',
+      transform: 'rotate(-90, 18, ' + axisMid + ')',
+      'font-family': '"Inter", sans-serif', 'font-size': '11' });
+    const t1 = el('tspan', { fill: '#1c1c1e', 'font-weight': '600' });
+    t1.textContent = M.axis;
+    const t2 = el('tspan', { fill: '#9d9a8e', 'font-weight': '400' });
+    t2.textContent = M.better === 'lower' ? '    lower is better ↓' : '    higher is better ↑';
+    yt.appendChild(t1); yt.appendChild(t2);
+    svg.appendChild(yt);
+
+    // faint reference line where Standard is a constant baseline (the ×1.00 metrics)
+    const stds = SCALES.map(sc => D[sc].std[M.idx]);
+    if (stds.every(v => Math.abs(v - stds[0]) < 1e-9) && stds[0] > vmin && stds[0] < vmax) {
+      const yy = y(stds[0]);
+      svg.appendChild(el('line', { x1: padL, y1: yy, x2: padL + plotW, y2: yy,
+        stroke: '#b7b09a', 'stroke-width': 1.2, 'stroke-dasharray': '4 3' }));
+    }
+
+    // bars: one per method, absolute value grown from the axis floor
+    SCALES.forEach((sc, gi) => {
+      const gx = padL + gi * (gInner + groupGap);
+      METHODS.forEach((mk, mi) => {
+        const abs = D[sc][mk.key][M.idx];
+        const bx = gx + mi * (barW + barGap);
+        const yv = y(abs), h = Math.max(1.5, y0 - yv);
+        const rect = el('rect', { x: bx, y: yv, width: barW, height: h, rx: 2.5,
+          fill: mk.color, 'fill-opacity': '0.9',
+          class: 'rbar', 'data-sc': sc, 'data-mk': mk.key });
+        const raw = abs - D[sc].std[M.idx];
+        const dtxt = mk.key === 'std' ? 'baseline' : signed(raw, M.ddec) + M.aunit + ' vs Standard';
+        const tt = el('title', {});
+        tt.textContent = sc + ' · ' + mk.name + ': ' + M.label + ' ' +
+          abs.toFixed(M.adec) + M.aunit + ' (' + dtxt + ')';
+        rect.appendChild(tt);
+        rect.addEventListener('mouseenter', () => { hovered = { sc: sc, mk: mk.key }; renderHover(); paint(); });
+        rect.addEventListener('mouseleave', () => { hovered = null; renderHover(); paint(); });
+        svg.appendChild(rect);
+      });
+      // scale label + param count under the group
+      const cx = gx + gInner / 2;
+      const sl = el('text', { x: cx, y: y0 + 16, 'text-anchor': 'middle',
+        'font-family': '"Inter", sans-serif', 'font-size': '12', 'font-weight': '700', fill: '#1c1c1e' });
+      sl.textContent = sc;
+      svg.appendChild(sl);
+      const pl = el('text', { x: cx, y: y0 + 30, 'text-anchor': 'middle',
+        'font-family': '"JetBrains Mono", monospace', 'font-size': '9.5', fill: '#9d9a8e' });
+      pl.textContent = PARAM[sc];
+      svg.appendChild(pl);
+    });
+
+    renderLegend();
+    renderHover();
+    renderSr();
+  }
+
+  function paint() {
+    // outline the hovered bar only; leave every other bar exactly as drawn
+    svg.querySelectorAll('.rbar').forEach(r => {
+      const on = hovered && r.getAttribute('data-sc') === hovered.sc && r.getAttribute('data-mk') === hovered.mk;
+      r.setAttribute('stroke', on ? '#1c1c1e' : 'none');
+      r.setAttribute('stroke-width', on ? '1.5' : '0');
+    });
+  }
+
+  function renderLegend() {
+    let h = '';
+    METHODS.forEach(mk => {
+      h += '<span class="rlg"><span class="rlg-sw" style="background:' + mk.color + '"></span><span class="model">' + mk.name + '</span></span>';
+    });
+    legendEl.innerHTML = h;
+  }
+
+  function renderHover() {
+    const M = m();
+    if (!hovered) {
+      hoverEl.innerHTML = '<span style="color:#9d9a8e">Hover a bar for the exact value.</span>';
+      return;
+    }
+    const sc = hovered.sc, mk = hovered.mk;
+    const mkObj = METHODS.find(x => x.key === mk);
+    const abs = D[sc][mk][M.idx], raw = abs - D[sc].std[M.idx];
+    let delta;
+    if (mk === 'std') {
+      delta = '<span class="rhv-delta">(the <span class="model">Standard</span> baseline)</span>';
+    } else {
+      const good = (M.better === 'lower' ? -raw : raw) >= 0;
+      const tag = good ? '<span class="rhv-good">better</span>' : '<span class="rhv-bad">worse</span>';
+      delta = '<span class="rhv-delta">(' + signed(raw, M.ddec) + M.aunit + ' vs <span class="model">Standard</span>, ' + tag + ')</span>';
+    }
+    hoverEl.innerHTML =
+      '<span class="pill" style="background:' + mkObj.color + '22;border-color:' + mkObj.color + '55;color:' + mkObj.color + '"><span class="model">' + mkObj.name + '</span></span>' +
+      ' at <strong>' + sc + '</strong> · ' + M.label + ' = <strong>' + abs.toFixed(M.adec) + M.aunit + '</strong> ' +
+      delta;
+  }
+
+  function renderSr() {
+    // visually-hidden data table for screen readers (the visible table was removed)
+    let h = '<table><caption>Results by scale and method (absolute value; Δ vs Standard)</caption><thead><tr><th>Scale</th><th>Method</th>';
+    METRICS.forEach(M => { h += '<th>' + M.label + '</th>'; });
+    h += '</tr></thead><tbody>';
+    SCALES.forEach(sc => {
+      ['std', 'twox', 'delayed', 'sps'].forEach(mk => {
+        const name = mk === 'std' ? 'Standard' : (METHODS.find(x => x.key === mk) || {}).name;
+        h += '<tr><td>' + sc + '</td><td>' + name + '</td>';
+        METRICS.forEach(M => {
+          const abs = D[sc][mk][M.idx];
+          const raw = abs - D[sc].std[M.idx];
+          const dtxt = mk === 'std' ? '' : ' (' + signed(raw, M.ddec) + ')';
+          h += '<td>' + abs.toFixed(M.adec) + M.aunit + dtxt + '</td>';
+        });
+        h += '</tr>';
+      });
+    });
+    h += '</tbody></table>';
+    srEl.innerHTML = h;
+  }
+
+  root.querySelectorAll('.metric-tab').forEach(b => {
+    b.addEventListener('click', () => {
+      metric = b.dataset.metric;
+      hovered = null;
+      root.querySelectorAll('.metric-tab').forEach(x => x.classList.toggle('active', x === b));
+      render();
+    });
+  });
+
+  render();
+}
+const resultsFig = document.querySelector('.results-fig');
+if (resultsFig) initResultsChart(resultsFig);
+
+// ---------------------------------------------------------------------------
+// Hero animation: a 4-layer SPS forward pass, generated so the cells can be
+// revealed one token at a time as each token climbs the stack L1 -> L4.
+// Real tokens x_t write PERSISTENT KV entries (filled, kept every layer);
+// predict tokens rho_t write EPHEMERAL entries (dashed) and emit the next-token
+// prediction after L4; ephemeral entries are evicted W tokens later.
+// ---------------------------------------------------------------------------
+function buildSpsAnim() {
+  const fig = document.querySelector('.spsanim');
+  if (!fig) return;
+  const svg = fig.querySelector('svg');
+  if (!svg) return;
+
+  // parameters
+  const NT = 4, NL = 4, W = 2;
+
+  // geometry
+  const cw = 30, ch = 26, inH = 30, prH = 26;
+  const DX = 35, STRIDE = 116, X0 = 56;
+  const BH = 38, bandTop = 46, bandStride = 44;
+  const bandY = L => bandTop + (NL - L) * bandStride;   // L=1..NL, L4 on top
+  const cellY = L => bandY(L) + (BH - ch) / 2;
+  const predY = 8;
+  const inputY = bandY(1) + BH + 16;
+  const baseY = inputY + inH + 3;
+  const xLeft = t => X0 + t * STRIDE;
+  const rLeft = t => X0 + t * STRIDE + DX;
+  const mid = left => left + cw / 2;
+  const bandLeft = X0 - 14;
+  const bandRight = rLeft(NT - 1) + cw + 14;
+  const bandW = bandRight - bandLeft;
+  const legendX = bandRight + 34;
+  const minX = -118, labX = -28;   // left gutter for the region labels
+
+  // timeline (% of one loop): beats per token = input, L1..LN, prediction
+  const BEAT = 3.4, BPT = NL + 2, HOLD = 96;
+  const R = (t, b) => (t * BPT + b) * BEAT;
+  const evict = t => (t + W < NT) ? R(t + W, NL + 1) : null;
+  const P2 = n => Math.round(n * 100) / 100;
+
+  const S = [];   // svg body fragments
+  const K = [];   // generated keyframes + bindings
+  let uid = 0;
+
+  function bind(cls) { return '.spsanim .' + cls + '{animation:' + cls + ' var(--sps-dur) linear infinite}'; }
+  function keyStay(cls, rev) {
+    const r = Math.max(0, rev);
+    K.push(bind(cls) + '@keyframes ' + cls + '{' +
+      (r <= 0 ? '' : '0%,' + P2(r - 0.01) + '%{opacity:0}') +
+      P2(r) + '%,' + HOLD + '%{opacity:1}100%{opacity:0}}');
+  }
+  function keyEvict(cls, rev, evi) {
+    const r = Math.max(0, rev);
+    K.push(bind(cls) + '@keyframes ' + cls + '{' +
+      (r <= 0 ? '' : '0%,' + P2(r - 0.01) + '%{opacity:0}') +
+      P2(r) + '%,' + P2(evi - 0.01) + '%{opacity:1}' + P2(evi) + '%,100%{opacity:0}}');
+  }
+  function gStay(rev, inner, extra) {
+    const cls = 'sps-k' + (uid++);
+    S.push('<g class="' + cls + (extra ? ' ' + extra : '') + '">' + inner + '</g>');
+    keyStay(cls, rev);
+  }
+  function gEvict(rev, evi, inner, extra) {
+    const cls = 'sps-k' + (uid++);
+    S.push('<g class="' + cls + (extra ? ' ' + extra : '') + '">' + inner + '</g>');
+    if (evi === null) keyStay(cls, rev); else keyEvict(cls, rev, evi);
+  }
+
+  // ---- static backdrop ----
+  S.push('<g class="sps-in">');
+  for (let L = 1; L <= NL; L++)
+    S.push('<rect class="sps-layer" x="' + bandLeft + '" y="' + bandY(L) + '" width="' + bandW + '" height="' + BH + '" rx="9"/>');
+  S.push('<line x1="' + bandLeft + '" y1="' + baseY + '" x2="' + bandRight + '" y2="' + baseY + '" stroke="var(--rule-strong)" stroke-width="1"/>');
+  S.push('<text class="sps-rowlab" x="' + labX + '" y="' + (predY + 13) + '" text-anchor="end">PREDICTIONS</text>');
+  S.push('<text class="sps-rowlab" x="' + labX + '" y="' + ((bandY(NL) + bandY(1) + BH) / 2 + 3) + '" text-anchor="end">KV CACHE</text>');
+  S.push('<text class="sps-rowlab" x="' + labX + '" y="' + (inputY + inH / 2 + 4) + '" text-anchor="end">INPUT</text>');
+  for (let L = 1; L <= NL; L++)
+    S.push('<text class="sps-ltag" x="' + (bandLeft - 8) + '" y="' + (cellY(L) + ch / 2 + 3) + '" text-anchor="end">L' + L + '</text>');
+  S.push('</g>');
+
+  // ---- per-token reveal groups ----
+  for (let t = 0; t < NT; t++) {
+    const evi = evict(t);
+    const evd = (evi !== null && evi < HOLD) ? 'sps-evd' : '';
+    // input pair (beat 0)
+    let inp = '';
+    inp += '<rect class="sps-xin" x="' + xLeft(t) + '" y="' + inputY + '" width="' + cw + '" height="' + inH + '" rx="5"/>';
+    inp += '<text class="sps-xt" x="' + mid(xLeft(t)) + '" y="' + (inputY + inH / 2 + 5) + '" text-anchor="middle"><tspan font-style="italic">x</tspan><tspan dy="4" font-size="10">' + (t + 1) + '</tspan></text>';
+    inp += '<rect class="sps-rho" x="' + rLeft(t) + '" y="' + inputY + '" width="' + cw + '" height="' + inH + '" rx="5"/>';
+    inp += '<text class="sps-rt" x="' + mid(rLeft(t)) + '" y="' + (inputY + inH / 2 + 5) + '" text-anchor="middle">ρ<tspan dy="4" font-size="10">' + (t + 1) + '</tspan></text>';
+    gStay(R(t, 0), inp);
+    // layer cells (beats 1..NL): x persistent + rho ephemeral
+    for (let L = 1; L <= NL; L++) {
+      gStay(R(t, L), '<rect class="sps-kv" x="' + xLeft(t) + '" y="' + cellY(L) + '" width="' + cw + '" height="' + ch + '" rx="5"/>');
+      gEvict(R(t, L), evi, '<rect class="sps-eph" x="' + rLeft(t) + '" y="' + cellY(L) + '" width="' + cw + '" height="' + ch + '" rx="5"/>', evd);
+    }
+    // prediction (beat NL+1): the emitted next-token output, centred above the rho
+    // column that produced it. Once produced it persists, even after that ephemeral
+    // KV entry is evicted from the window.
+    const pcx = mid(rLeft(t));
+    let pr = '';
+    pr += '<rect class="sps-pred" x="' + (pcx - 17) + '" y="' + predY + '" width="34" height="' + prH + '" rx="5"/>';
+    pr += '<text class="sps-pt" x="' + pcx + '" y="' + (predY + prH / 2 + 4) + '" text-anchor="middle" font-style="italic">x</text>';
+    pr += '<text class="sps-pt sps-sub" x="' + (pcx + 6) + '" y="' + (predY + prH / 2 + 8) + '" text-anchor="middle">' + (t + 2) + '</text>';
+    pr += '<polyline class="sps-hat" points="' + (pcx - 4) + ',' + (predY + 7) + ' ' + pcx + ',' + (predY + 2) + ' ' + (pcx + 4) + ',' + (predY + 7) + '"/>';
+    gStay(R(t, NL + 1), pr);
+  }
+
+  // ---- two-key legend ----
+  const L = [];
+  L.push('<g class="sps-in">');
+  const legHead = (x, y, txt) => L.push('<text class="sps-leg-h" x="' + x + '" y="' + y + '">' + txt + '</text>');
+  const legRow = (x, y, sw, txt) => {
+    L.push('<rect class="' + sw + '" x="' + x + '" y="' + y + '" width="22" height="22" rx="5"/>');
+    L.push('<text class="sps-leg-t" x="' + (x + 32) + '" y="' + (y + 16) + '">' + txt + '</text>');
+  };
+  legHead(legendX, predY + 24, 'TOKEN');
+  legRow(legendX, predY + 32, 'sps-xin', 'Real token <tspan font-style="italic">x</tspan>');
+  legRow(legendX, predY + 60, 'sps-rho', 'ρ (<tspan font-family="\'JetBrains Mono\', monospace" font-size="12">&lt;predict&gt;</tspan>)');
+  legHead(legendX, predY + 104, 'KV CACHE');
+  legRow(legendX, predY + 112, 'sps-kv', 'Persistent entry');
+  legRow(legendX, predY + 140, 'sps-eph', 'Ephemeral entry');
+  legRow(legendX, predY + 168, 'sps-pred', 'Next‑token prediction');
+  L.push('</g>');
+
+  // ---- assemble ----
+  const maxX = legendX + 210;
+  svg.setAttribute('viewBox', minX + ' 0 ' + (maxX - minX) + ' ' + Math.ceil(baseY + 8));
+  svg.innerHTML = S.join('') + L.join('');
+
+  let st = document.getElementById('sps-anim-kf');
+  if (!st) { st = document.createElement('style'); st.id = 'sps-anim-kf'; document.head.appendChild(st); }
+  st.textContent = K.join('\n');
+}
+buildSpsAnim();
+</script>
+
+<script>
+// Section-navigation scrollspy + reveal-on-scroll (progressive enhancement)
+(function () {
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- Scrollspy: highlight the rail item for the section in the middle band ----
+  const links = Array.from(document.querySelectorAll('.toc a'));
+  if (links.length && 'IntersectionObserver' in window) {
+    const items = links.map(a => {
+      const id = a.getAttribute('href').slice(1);
+      return { id, li: a.parentElement, target: document.getElementById(id) };
+    }).filter(it => it.target);
+
+    const fill = document.getElementById('toc-fill');
+    const visible = new Set();
+
+    function setActive(idx) {
+      items.forEach((it, i) => {
+        it.li.classList.toggle('active', i === idx);
+        it.li.classList.toggle('done', i < idx);
+      });
+      if (fill && items.length > 1) {
+        fill.style.height = (idx / (items.length - 1) * 100) + '%';
+      }
+    }
+
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) visible.add(e.target); else visible.delete(e.target);
+      }
+      // Active = the deepest section whose heading has entered the middle band;
+      // fall back to the last section scrolled past the band's top.
+      let idx = 0;
+      for (let i = 0; i < items.length; i++) {
+        if (visible.has(items[i].target)) { idx = i; }
+      }
+      if (visible.size === 0) {
+        // between bands: pick the last heading above the viewport middle
+        const mid = window.innerHeight / 2;
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].target.getBoundingClientRect().top <= mid) idx = i;
+        }
+      }
+      setActive(idx);
+    }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 });
+
+    items.forEach(it => io.observe(it.target));
+    setActive(0);
+  }
+
+  // ---- Reveal-on-scroll: fade + rise blocks as they enter the viewport ----
+  if (!reduce && 'IntersectionObserver' in window) {
+    const sel = 'article h2, article h3, article figure, ' +
+                'article .takeaway, article .eqn, article .tldr, article .explore, ' +
+                'article > ol, article > ul';
+    const ro = new IntersectionObserver((entries, obs) => {
+      for (const e of entries) {
+        if (e.isIntersecting) { e.target.classList.add('in'); obs.unobserve(e.target); }
+      }
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.04 });
+    // Only hide + animate blocks that start below the fold; anything already
+    // in/above the viewport stays visible so there is never a first-paint flash.
+    Array.from(document.querySelectorAll(sel)).forEach(el => {
+      if (el.getBoundingClientRect().top < window.innerHeight) return;
+      el.classList.add('reveal');
+      ro.observe(el);
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
